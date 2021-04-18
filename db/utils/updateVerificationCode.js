@@ -1,5 +1,12 @@
 const verificationCode = require("../model/verificationCodeModel");
 
+/**
+ * @description: 更新或插入新邮箱验证码
+ * @param {String} mailBox 邮箱
+ * @param {String} codeNumber 验证码
+ * @param {Number} time 时间戳
+ * @author: wuhaipeng
+ */
 function updateVerificationCode(mailBox, codeNumber, time) {
   return new Promise((resolve, reject) => {
     verificationCode
