@@ -1,13 +1,28 @@
 "use strict";
 const nodemailer = require("nodemailer");
 
+/**
+ * @description: 发送邮箱验证码或邀请码
+ * @param {String} mailBox
+ * @param {Number} code
+ * @param {String} type 0邀请码 1验证码
+ * @author: wuhaipeng
+ */
 // async..await is not allowed in global scope, must use a wrapper
-async function mailSender(mailBox, code) {
+async function mailSender(mailBox, code, type) {
   // Generate test SMTP service account from ethereal.email
   // Only needed if you don't have a real mail account for testing
+  const codeType = {
+    0: "验证码",
+    1: "邀请码",
+  }[type];
 
+  const workingTime = {
+    0: "五分钟",
+    1: "一天",
+  }[type];
   // 测试 不用使用真实邮箱测试
-  let testAccount = await nodemailer.createTestAccount();
+  await nodemailer.createTestAccount();
 
   // 发送方配置
   let transporter = nodemailer.createTransport({
@@ -28,17 +43,10 @@ async function mailSender(mailBox, code) {
     to: `<${mailBox}>`, // 可同时发送多个邮箱
     subject: "医疗用品销售系统注册验证码", // 邮件标题
     text: "Hello world?", // plain text body
-    html: `<span><b>【医疗用品销售】</b>您的<b>验证码</b>为${code}，有效期五分钟</span>`,
+    html: `<span><b>【医疗用品销售】</b>您的<b>${codeType}</b>为${code}，有效期${workingTime}</span>`,
     // html body
   };
   await transporter.sendMail(sendOptions);
 }
 
-// mailSender(1111)
-//   .then(() => {
-//     console.log("发送成功");
-//   })
-//   .catch((err) => {
-//     console.log(err);
-//   });
 module.exports = mailSender;

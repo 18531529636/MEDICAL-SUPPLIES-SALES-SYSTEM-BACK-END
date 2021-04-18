@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyparser = require("body-parser");
 const buyerRouter = require("../db/router/buyerRouter");
+const sallerRouter = require("../db/router/sallerRouter");
 const sendVerificationCode = require("../db/router/verificationCodeRouter");
 require("../db/connect");
 const app = express();
@@ -14,8 +15,14 @@ app.use(bodyparser.json());
 
 // 引入路由
 app.use("/buyer", buyerRouter);
+app.use("/saller", sallerRouter);
+
 // 邮箱验证码
 app.get("/getVerificationCode", (req, res) => {
+  sendVerificationCode(req, res);
+});
+// 邀请码
+app.get("/getInvitationCode", (req, res) => {
   sendVerificationCode(req, res);
 });
 

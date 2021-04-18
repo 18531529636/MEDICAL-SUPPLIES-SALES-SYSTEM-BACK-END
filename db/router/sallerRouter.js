@@ -1,4 +1,4 @@
-const Buyer = require("../model/buyerModel");
+const Saller = require("../model/sallerModel");
 const express = require("express");
 const router = express.Router();
 const verificationCodeModel = require("../model/verificationCodeModel");
@@ -11,7 +11,7 @@ router.post("/login", (req, res) => {
     res.send({ code: -1, msg: "参数为空" });
     return;
   }
-  Buyer.find({
+  Saller.find({
     $or: [
       {
         loginNumber,
@@ -40,14 +40,14 @@ router.post("/register", async (req, res) => {
   const {
     loginNumber,
     verificationCode,
-    buyerName,
+    sallerName,
     passWord,
     mailBox,
   } = req.body;
   if (
     !loginNumber ||
     !passWord ||
-    !buyerName ||
+    !sallerName ||
     !mailBox ||
     !verificationCode
   ) {
@@ -55,14 +55,14 @@ router.post("/register", async (req, res) => {
     return;
   }
   try {
-    const findMailBox = await Buyer.find({
+    const findMailBox = await Saller.find({
       mailBox,
     });
     if (findMailBox.length) {
       res.send({ code: 0, msg: "此邮箱已被注册，请找回密码" });
       return;
     }
-    const findLoginNumber = await Buyer.find({
+    const findLoginNumber = await Saller.find({
       loginNumber,
     });
     if (findLoginNumber.length) {
@@ -72,17 +72,17 @@ router.post("/register", async (req, res) => {
 
     verificationCodeModel.find({ mailBox }).then((response) => {
       if (!response.length) {
-        res.send({ code: 0, msg: "邮箱验证码不正确" });
+        res.send({ code: 0, msg: "邀请码不正确" });
         return;
       }
       const { codeNumber, time } = response[0];
 
       if (codeNumber !== verificationCode) {
-        res.send({ code: 0, msg: "邮箱验证码不正确" });
-      } else if (Date.now() - time >= 300000) {
-        res.send({ code: 0, msg: "邮箱验证码失效" });
+        res.send({ code: 0, msg: "邀请码不正确" });
+      } else if (Date.now() - time >= 86400000) {
+        res.send({ code: 0, msg: "邀请码失效" });
       } else {
-        Buyer.insertMany({ loginNumber, passWord, buyerName, mailBox })
+        Saller.insertMany({ loginNumber, passWord, sallerName, mailBox })
           .then(() => {
             res.send({ code: 0, msg: "注册成功" });
           })
