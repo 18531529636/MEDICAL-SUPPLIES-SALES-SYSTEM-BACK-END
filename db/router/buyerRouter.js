@@ -1,8 +1,7 @@
 const Buyer = require("../model/buyerModel");
 const express = require("express");
 const router = express.Router();
-// const verificationCodeData = require("../data/verificationCode");
-const maildSender = require("../utils/mailer");
+const verificationCodeModel = require("../model/verificationCodeModel");
 
 global.verificationCodeData = {};
 
@@ -13,8 +12,16 @@ router.post("/login", (req, res) => {
     return;
   }
   Buyer.find({
-    loginNumber,
-    passWord,
+    $or: [
+      {
+        loginNumber,
+        passWord,
+      },
+      {
+        mailBox: loginNumber,
+        passWord,
+      },
+    ],
   })
     .then((responese) => {
       if (!responese.length) {
@@ -52,7 +59,7 @@ router.post("/register", async (req, res) => {
       mailBox,
     });
     if (findMailBox.length) {
-      res.send({ code: 0, msg: "此邮箱已存在，请找回密码" });
+      res.send({ code: 0, msg: "此邮箱已被注册，请找回密码" });
       return;
     }
     const findLoginNumber = await Buyer.find({
@@ -62,61 +69,33 @@ router.post("/register", async (req, res) => {
       res.send({ code: 0, msg: "此账号已存在，请找回密码" });
       return;
     }
-    // TODO
-    // 邮箱验证码存在服务器内存内,有问题,需解决 
-    console.log("----------登录验证邮箱验证码");
-    console.log(
-      Object.prototype.toString.call(Object.keys(verificationCodeData)[0])
-    );
-    console.log(Object.prototype.toString.call(mailBox));
-    console.log(verificationCodeData);
-    console.log(verificationCodeData[mailBox]);
-    console.log(verificationCodeData[mailBox].codeNumber);
-    console.log(verificationCode);
-    if (
-      !verificationCodeData[mailBox] ||
-      verificationCodeData[mailBox].codeNumber !== verificationCode
-    ) {
-      res.send({ code: 0, msg: "邮箱验证码不正确" });
-    } else if (verificationCodeData[mailBox].time - new Date() >= 1000) {
-      res.send({ code: 0, msg: "邮箱验证码失效" });
-    } else {
-      Buyer.insertMany({ loginNumber, passWord, buyerName, mailBox })
-        .then(() => {
-          res.send({ code: 0, msg: "注册成功" });
-        })
-        .catch((err) => {
-          console.log("注册");
-          console.log(err);
-          res.send({ code: 0, msg: "注册失败" });
-        });
-    }
+
+    verificationCodeModel.find({ mailBox }).then((response) => {
+      if (!response.length) {
+        res.send({ code: 0, msg: "邮箱验证码不正确" });
+        return;
+      }
+      const { codeNumber, time } = response[0];
+
+      if (codeNumber !== verificationCode) {
+        res.send({ code: 0, msg: "邮箱验证码不正确" });
+      } else if (Date.now() - time >= 300000) {
+        res.send({ code: 0, msg: "邮箱验证码失效" });
+      } else {
+        Buyer.insertMany({ loginNumber, passWord, buyerName, mailBox })
+          .then(() => {
+            res.send({ code: 0, msg: "注册成功" });
+          })
+          .catch((err) => {
+            console.log("注册");
+            console.log(err);
+            res.send({ code: 0, msg: "注册失败" });
+          });
+      }
+    });
   } catch (err) {
     console.log(err);
   }
 });
 
-router.get("/getVerificationCode", async (req, res) => {
-  const { mailBox } = req.query;
-  if (!mailBox) {
-    res.send({ code: -1, msg: "参数为空" });
-    return;
-  }
-  console.log(mailBox);
-  try {
-    verificationCodeData[mailBox] = {
-      codeNumber: (Math.random() * 100000).toString().substr(0, 4),
-    };
-    console.log("邮箱验证码");
-    console.log(verificationCodeData[mailBox].codeNumber);
-    // maildSender(verificationCodeData[mailBox].codeNumber, mailBox).then(() => {
-    //   console.log("成功发送邮箱验证码");
-    //   verificationCodeData[mailBox].time = new Date();
-    //   res.send({ code: 0, msg: `${mailBox} 邮箱验证码发送成功` });
-    // });
-    res.send({ code: 0, msg: `${mailBox} 邮箱验证码发送成功` });
-  } catch (err) {
-    console.log(err);
-  }
-});
 module.exports = router;

@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
-const buyerSchema = new mongoose.Schema({
-  buyerName: {
+const sallerSchema = new mongoose.Schema({
+  sallerName: {
     type: String,
     require: true,
   },
@@ -22,5 +22,5 @@ const buyerSchema = new mongoose.Schema({
     default: 0,
   },
 });
-const Buyer = mongoose.model("buyer", buyerSchema);
-module.exports = Buyer;
+const saller = mongoose.model("saller", sallerSchema);
+module.exports = saller;

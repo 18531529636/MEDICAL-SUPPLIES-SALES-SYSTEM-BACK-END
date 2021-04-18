@@ -3,6 +3,7 @@ const mongoose = require("mongoose");
 mongoose.connect("mongodb://localhost/sallsystem", {
   useNewUrlParser: true,
   useUnifiedTopology: true,
+  useFindAndModify: false,
 });
 
 const db = mongoose.connection;
