@@ -1,2 +1,0 @@
-const getCrypto = require("./getCrypto");
-

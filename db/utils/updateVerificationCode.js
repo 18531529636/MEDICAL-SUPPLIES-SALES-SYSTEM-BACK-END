@@ -16,6 +16,7 @@ function updateVerificationCode(mailBox, codeNumber, time) {
           await verificationCode
             .insertMany({ mailBox, codeNumber, time })
             .then(() => {
+              console.log("验证码更新成功");
               resolve();
             })
             .catch((err) => {
@@ -32,6 +33,7 @@ function updateVerificationCode(mailBox, codeNumber, time) {
               }
             )
             .then(() => {
+              console.log("验证码更新成功");
               resolve();
             })
             .catch((err) => {

@@ -2,20 +2,11 @@ const Saller = require("@model/sallerModel");
 const express = require("express");
 const router = express.Router();
 const verificationCodeModel = require("@model/verificationCodeModel");
-const getCtypto = require("@utils/getCrypto");
+const loginCookie = require("@utils/loginCookie");
+const updateVerificationCode = require("@utils/updateVerificationCode");
 
 router.post("/login", (req, res) => {
   const { loginNumber, passWord } = req.body;
-  // res.header("set-cookie", "token=31234123;path=/;max-age=3600 ");
-  // res.send({ code: 0, data: req.headers });
-  // return;
-  // res.cookie("token", "1231413213", {
-  //   path: "/",
-  //   maxAge: 36000,
-  // });
-  // res.send({ code: 0, data: req.headers });
-  // return;
-
   if (!loginNumber || !passWord) {
     res.send({ code: -1, msg: "参数为空" });
     return;
@@ -32,12 +23,18 @@ router.post("/login", (req, res) => {
       },
     ],
   })
-    .then((responese) => {
+    .then(async (responese) => {
       if (!responese.length) {
-        res.send({ code: 0, msg: "登陆失败，账号或密码错误" });
+        res.send({ code: -2, msg: "登陆失败，账号或密码错误" });
         return;
       }
-      res.send({ code: 0, msg: "登陆成功" });
+      const loginToken = await loginCookie.getLoginCookie(loginNumber, 0);
+      console.log("loginToken");
+      console.log(loginToken);
+      updateVerificationCode(loginNumber, "", -1).then(() => {
+        res.cookie("token", loginToken, { path: "/" });
+        res.send({ code: 0, msg: "登陆成功" });
+      });
     })
     .catch((err) => {
       console.log(err);
