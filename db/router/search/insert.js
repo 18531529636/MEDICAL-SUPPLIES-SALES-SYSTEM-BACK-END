@@ -1,4 +1,4 @@
-const Buyer = require("../../model/buyerModel");
+const Buyer = require("@@model/buyerModel");
 
 const insert = {
   /**

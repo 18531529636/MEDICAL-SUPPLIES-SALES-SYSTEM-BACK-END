@@ -1,0 +1,39 @@
+{
+  "name": "medical-supplies-sales-system-back-end",
+  "version": "1.0.0",
+  "description": "医疗用品销售系统后端",
+  "main": "index.js",
+  "dependencies": {
+    "body-parser": "^1.19.0",
+    "cookie-parser": "^1.4.5",
+    "cors": "^2.8.5",
+    "crypto-js": "^4.0.0",
+    "express": "^4.17.1",
+    "module-alias": "^2.2.2",
+    "mongoose": "^5.12.4",
+    "nodemailer": "^6.5.0"
+  },
+  "devDependencies": {},
+  "_moduleAliases": {
+    "@utils": "db/utils",
+    "@model": "db/model",
+    "@data": "db/data",
+    "@router": "db/router",
+    "@": ".",
+    "@db": "./db"
+  },
+  "scripts": {
+    "dev": "nodemon src",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/18531529636/MEDICAL-SUPPLIES-SALES-SYSTEM-BACK-END.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/18531529636/MEDICAL-SUPPLIES-SALES-SYSTEM-BACK-END/issues"
+  },
+  "homepage": "https://github.com/18531529636/MEDICAL-SUPPLIES-SALES-SYSTEM-BACK-END#readme"
+}

@@ -1,7 +1,7 @@
-const Buyer = require("../model/buyerModel");
+const Buyer = require("@model/buyerModel");
 const express = require("express");
 const router = express.Router();
-const verificationCodeModel = require("../model/verificationCodeModel");
+const verificationCodeModel = require("@model/verificationCodeModel");
 
 global.verificationCodeData = {};
 

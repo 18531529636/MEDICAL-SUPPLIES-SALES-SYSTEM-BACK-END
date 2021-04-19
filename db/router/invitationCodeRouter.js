@@ -1,5 +1,5 @@
-const maildSender = require("../utils/mailer");
-const updateVerificationCode = require("../utils/updateVerificationCode");
+const maildSender = require("@utils/mailer");
+const updateVerificationCode = require("@utils/updateVerificationCode");
 
 function sendCode(req, res) {
   const { mailBox } = req.query;

@@ -1,9 +1,11 @@
 const express = require("express");
 const bodyparser = require("body-parser");
-const buyerRouter = require("../db/router/buyerRouter");
-const sallerRouter = require("../db/router/sallerRouter");
-const sendVerificationCode = require("../db/router/verificationCodeRouter");
-require("../db/connect");
+const buyerRouter = require("@router/buyerRouter");
+const sallerRouter = require("@router/sallerRouter");
+const sendVerificationCode = require("@router/verificationCodeRouter");
+const cookieParser = require("cookie-parser");
+const cors = require("cors");
+require("@db/connect");
 const app = express();
 
 const port = 3000;
@@ -12,6 +14,10 @@ const port = 3000;
 app.use(bodyparser.urlencoded({ extended: false }));
 // 解析json
 app.use(bodyparser.json());
+// app.use(cors());
+
+// 加入cookie-parser中间件
+app.use(cookieParser());
 
 // 引入路由
 app.use("/buyer", buyerRouter);

@@ -1,12 +1,21 @@
-const Saller = require("../model/sallerModel");
+const Saller = require("@model/sallerModel");
 const express = require("express");
 const router = express.Router();
-const verificationCodeModel = require("../model/verificationCodeModel");
-
-global.verificationCodeData = {};
+const verificationCodeModel = require("@model/verificationCodeModel");
+const getCtypto = require("@utils/getCrypto");
 
 router.post("/login", (req, res) => {
   const { loginNumber, passWord } = req.body;
+  // res.header("set-cookie", "token=31234123;path=/;max-age=3600 ");
+  // res.send({ code: 0, data: req.headers });
+  // return;
+  // res.cookie("token", "1231413213", {
+  //   path: "/",
+  //   maxAge: 36000,
+  // });
+  // res.send({ code: 0, data: req.headers });
+  // return;
+
   if (!loginNumber || !passWord) {
     res.send({ code: -1, msg: "参数为空" });
     return;

@@ -1,4 +1,4 @@
-const verificationCode = require("../model/verificationCodeModel");
+const verificationCode = require("@model/verificationCodeModel");
 
 /**
  * @description: 更新或插入新邮箱验证码
