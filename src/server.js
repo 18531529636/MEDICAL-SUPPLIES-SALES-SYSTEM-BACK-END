@@ -4,6 +4,7 @@ const buyerRouter = require("@router/buyerRouter");
 const sallerRouter = require("@router/sallerRouter");
 const sendVerificationCode = require("@router/verificationCodeRouter");
 const cookieParser = require("cookie-parser");
+const sallerCheckCookie = require("@utils/sallerCheckCookie");
 const cors = require("cors");
 require("@db/connect");
 const app = express();
@@ -19,6 +20,7 @@ app.use(bodyparser.json());
 // 加入cookie-parser中间件
 app.use(cookieParser());
 
+app.use(sallerCheckCookie);
 // 引入路由
 app.use("/buyer", buyerRouter);
 app.use("/saller", sallerRouter);

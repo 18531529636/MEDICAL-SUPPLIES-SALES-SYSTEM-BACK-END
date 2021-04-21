@@ -5,16 +5,26 @@ const buyerModel = require("@model/buyerModel");
 module.exports = {
   getLoginCookie: function (data, type) {
     return new Promise((resolve, reject) => {
+      const userType = { 0: "saller", 1: "buyer" }[type];
       const model = {
-        0: sallerModel,
-        1: buyerModel,
-      }[type];
+        saller: sallerModel,
+        buyer: buyerModel,
+      }[userType];
       model
         .find({ $or: [{ loginNumber: data }, { mailBox: data }] })
         .then((response) => {
-          const { loginNumber, mailBox } = response[0];
-          const loginCookie = getCrypto.encrypte([loginNumber, mailBox]);
-          console.log(loginCookie);
+          if (!response.length) {
+            reject("a");
+            return;
+          }
+          const { loginNumber, mailBox, _id } = response[0];
+          const userName = response[0][`${userType}Name`];
+          const loginCookie = getCrypto.encrypte({
+            loginNumber,
+            mailBox,
+            userName,
+            userId: _id,
+          });
           resolve(loginCookie);
         })
         .catch((err) => {

@@ -2,6 +2,8 @@ const Buyer = require("@model/buyerModel");
 const express = require("express");
 const router = express.Router();
 const verificationCodeModel = require("@model/verificationCodeModel");
+const updateVerificationCode = require("@utils/updateVerificationCode");
+const loginCookie = require("@utils/loginCookie");
 
 global.verificationCodeData = {};
 
@@ -23,12 +25,19 @@ router.post("/login", (req, res) => {
       },
     ],
   })
-    .then((responese) => {
+    .then(async (responese) => {
       if (!responese.length) {
-        res.send({ code: 0, msg: "登陆失败，账号或密码错误" });
+        res.send({ code: -2, msg: "登陆失败，账号或密码错误" });
         return;
       }
-      res.send({ code: 0, msg: "登陆成功" });
+      const loginToken = await loginCookie.getLoginCookie(loginNumber, 1);
+      console.log("loginToken");
+      console.log(loginToken);
+
+      updateVerificationCode(loginNumber, "", -1).then(() => {
+        res.cookie("token", loginToken, { path: "/" });
+        res.send({ code: 0, msg: "登陆成功" });
+      });
     })
     .catch((err) => {
       console.log(err);
@@ -59,28 +68,28 @@ router.post("/register", async (req, res) => {
       mailBox,
     });
     if (findMailBox.length) {
-      res.send({ code: 0, msg: "此邮箱已被注册，请找回密码" });
+      res.send({ code: -2, msg: "此邮箱已被注册，请找回密码" });
       return;
     }
     const findLoginNumber = await Buyer.find({
       loginNumber,
     });
     if (findLoginNumber.length) {
-      res.send({ code: 0, msg: "此账号已存在，请找回密码" });
+      res.send({ code: -2, msg: "此账号已存在，请找回密码" });
       return;
     }
 
     verificationCodeModel.find({ mailBox }).then((response) => {
       if (!response.length) {
-        res.send({ code: 0, msg: "邮箱验证码不正确" });
+        res.send({ code: -2, msg: "邮箱验证码不正确" });
         return;
       }
       const { codeNumber, time } = response[0];
 
       if (codeNumber !== verificationCode) {
-        res.send({ code: 0, msg: "邮箱验证码不正确" });
+        res.send({ code: -2, msg: "邮箱验证码不正确" });
       } else if (Date.now() - time >= 300000) {
-        res.send({ code: 0, msg: "邮箱验证码失效" });
+        res.send({ code: -2, msg: "邮箱验证码失效" });
       } else {
         Buyer.insertMany({ loginNumber, passWord, buyerName, mailBox })
           .then(() => {
@@ -89,7 +98,7 @@ router.post("/register", async (req, res) => {
           .catch((err) => {
             console.log("注册");
             console.log(err);
-            res.send({ code: 0, msg: "注册失败" });
+            res.send({ code: -2, msg: "注册失败" });
           });
       }
     });

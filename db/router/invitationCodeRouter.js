@@ -2,6 +2,7 @@ const maildSender = require("@utils/mailer");
 const updateVerificationCode = require("@utils/updateVerificationCode");
 
 function sendCode(req, res) {
+  console.log("test");
   const { mailBox } = req.query;
   if (!mailBox) {
     res.send({ code: -1, msg: "参数为空" });
@@ -13,7 +14,9 @@ function sendCode(req, res) {
       console.log("成功发送邀请码");
       console.log(codeNumber);
       updateVerificationCode(mailBox, codeNumber, Date.now());
-      res.send({ code: 0, msg: `${mailBox} 邀请功`, codeNumber });
+      res.send({ code: 0, msg: `${mailBox} 邀请码发送成功`, codeNumber });
+    }).catch(err => {
+      res.send({ code: -1, msg: `${mailBox} 邀请码发送失败`, codeNumber });
     });
 
     // console.log("成功发送邀请码");
