@@ -1,6 +1,5 @@
 const Saller = require("@model/sallerModel");
 const getCrypto = require("@utils/getCrypto");
-const { response } = require("express");
 
 const needCheck = [
   { method: "POST", path: "/saller/getOrder" },
@@ -17,12 +16,12 @@ module.exports = (req, res, next) => {
     return false;
   });
   if (!shouldCheck) {
+    console.log("通过中间件");
     next();
+    return;
   }
   const { token } = req.cookies;
-  // console.log("token");
   console.log("中间件");
-  // console.log(token);
   const loginData = getCrypto.decrypte(token);
   const { userId } = loginData;
   Saller.findById(userId)

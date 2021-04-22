@@ -112,13 +112,67 @@ router.post("/getOrder", (req, res) => {
     res.send({ code: -1, msg: "参数为空" });
     return;
   }
-  orderModel.find({ sallerId: sallerId }).then((response) => {
-    if (!response.length) {
+  orderModel
+    .find({ sallerId: sallerId })
+    .then((response) => {
+      res.send({ code: 0, msg: "查询成功", content: response });
+    })
+    .catch((err) => {
+      console.log(err);
       res.send({ code: -2, msg: "查询错误" });
-      return;
-    }
-    res.send({ code: 0, msg: "查询成功", content: response });
-  });
+    });
 });
 
+router.post("/setCourierNumber", (req, res) => {
+  const { sallerId, orderNumber, courierNumber } = req.body;
+  if (!sallerId || !orderNumber || !courierNumber) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  orderModel
+    .findOneAndUpdate(
+      { sallerId, orderNumber },
+      { $set: { goCourierNumber: courierNumber, orderStatus: 1 } }
+    )
+    .then((response) => {
+      console.log(response);
+      if (!response) {
+        res.send({ code: -2, msg: "失败" });
+        return;
+      }
+      res.send({ code: 0, msg: "订单快递单号更新成功" });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.send({ code: -1, msg: "失败" });
+    });
+});
+
+router.post("/handleReturnApply", (req, res) => {
+  const { sallerId, orderNumber, isAgree } = req.body;
+  if (!sallerId || !orderNumber || !isAgree) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  orderModel
+    .findOneAndUpdate(
+      { sallerId, orderNumber },
+      { $set: { orderStatus: isAgree ? 5 : 4 } }
+    )
+    .then((response) => {
+      console.log(response);
+      if (!response) {
+        res.send({ code: -2, msg: "失败" });
+        return;
+      }
+      res.send({
+        code: 0,
+        msg: `已${isAgree ? "同意" : "拒绝"}订单 ${orderNumber} 的退货申请`,
+      });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.send({ code: -1, msg: "失败" });
+    });
+});
 module.exports = router;
