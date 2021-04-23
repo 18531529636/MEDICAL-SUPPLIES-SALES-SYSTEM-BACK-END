@@ -20,7 +20,7 @@ app.use(bodyparser.json());
 // 加入cookie-parser中间件
 app.use(cookieParser());
 
-app.use(sallerCheckCookie);
+app.use("/saller", sallerCheckCookie);
 // 引入路由
 app.use("/buyer", buyerRouter);
 app.use("/saller", sallerRouter);

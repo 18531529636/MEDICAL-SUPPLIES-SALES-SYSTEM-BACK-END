@@ -29,6 +29,30 @@ const commoditySchema = new mongoose.Schema({
     type: String,
     require: true,
   },
+  sallerId: {
+    type: String,
+    require: true,
+  },
+  sallerName: {
+    type: String,
+    require: true,
+  },
+  sallerPhone: {
+    type: String,
+    require: true,
+  },
+  classificationNumber: {
+    type: Number,
+    require: true,
+  },
+  classificationName: {
+    type: String,
+    require: true,
+  },
+  setTime: {
+    type: Number,
+    require: true,
+  }
 });
 
 const commodity = mongoose.model("commodity", commoditySchema);

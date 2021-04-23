@@ -25,8 +25,10 @@ router.post("/login", (req, res) => {
       },
     ],
   })
-    .then(async (responese) => {
-      if (!responese.length) {
+    .then(async (response) => {
+      console.log("response");
+      console.log(response);
+      if (!response.length) {
         res.send({ code: -2, msg: "登陆失败，账号或密码错误" });
         return;
       }
@@ -37,6 +39,39 @@ router.post("/login", (req, res) => {
         res.cookie("token", loginToken, { path: "/" });
         res.send({ code: 0, msg: "登陆成功" });
       });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.send({ code: -1, msg: "数据查询错误！" });
+    });
+});
+
+router.post("/logout", (req, res) => {
+  const { loginNumber } = req.body;
+  if (!loginNumber) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  Saller.find({
+    $or: [
+      {
+        loginNumber,
+      },
+      {
+        mailBox: loginNumber,
+      },
+    ],
+  })
+    .then(async (response) => {
+      console.log("退出");
+      console.log("response");
+      console.log(response);
+      if (!response.length) {
+        res.send({ code: -2, msg: "退出失败" });
+        return;
+      }
+      res.clearCookie("token", { path: "/" });
+      res.send({ code: 0, msg: "退出成功" });
     })
     .catch((err) => {
       console.log(err);
@@ -91,7 +126,11 @@ router.post("/register", async (req, res) => {
         res.send({ code: -2, msg: "邀请码失效" });
       } else {
         Saller.insertMany({ loginNumber, passWord, sallerName, mailBox })
-          .then(() => {
+          .then(async () => {
+            const loginToken = await loginCookie.getLoginCookie(loginNumber, 0);
+            console.log("loginToken");
+            console.log(loginToken);
+            res.cookie("token", loginToken, { path: "/" });
             res.send({ code: 0, msg: "注册成功" });
           })
           .catch((err) => {
@@ -150,7 +189,8 @@ router.post("/setCourierNumber", (req, res) => {
 
 router.post("/handleReturnApply", (req, res) => {
   const { sallerId, orderNumber, isAgree } = req.body;
-  if (!sallerId || !orderNumber || !isAgree) {
+  const exit = Object.prototype.toString.call(isAgree) === "[object Boolean]";
+  if (!sallerId || !orderNumber || !exit) {
     res.send({ code: -1, msg: "参数为空" });
     return;
   }

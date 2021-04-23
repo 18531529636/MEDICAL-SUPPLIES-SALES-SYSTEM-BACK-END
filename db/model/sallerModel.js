@@ -4,6 +4,10 @@ const sallerSchema = new mongoose.Schema({
     type: String,
     require: true,
   },
+  phoneNumber: {
+    type: String,
+    require: true,
+  },
   loginNumber: {
     type: String,
     require: true,
