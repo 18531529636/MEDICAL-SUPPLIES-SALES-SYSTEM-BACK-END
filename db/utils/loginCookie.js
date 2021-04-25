@@ -24,6 +24,7 @@ module.exports = {
             mailBox,
             userName,
             userId: _id,
+            userType,
           });
           resolve(loginCookie);
         })

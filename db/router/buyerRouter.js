@@ -1,11 +1,13 @@
 const express = require("express");
 const router = express.Router();
-const Buyer = require("@model/buyerModel");
-const verificationCodeModel = require("@model/verificationCodeModel");
-const commodityModel = require("@model/commodityModel");
+const BuyerModel = require("@model/buyerModel");
+const SallerModel = require("@model/sallerModel");
+const VerificationCodeModel = require("@model/verificationCodeModel");
+const CommodityModel = require("@model/commodityModel");
+const CartModel = require("@model/cartModel");
 const updateVerificationCode = require("@utils/updateVerificationCode");
 const loginCookie = require("@utils/loginCookie");
-const commodityClassification = require("@data/commodityClassification");
+const buyerUtils = require("./buyerUtils");
 
 global.verificationCodeData = {};
 
@@ -15,7 +17,7 @@ router.post("/login", (req, res) => {
     res.send({ code: -1, msg: "参数为空" });
     return;
   }
-  Buyer.find({
+  BuyerModel.find({
     $or: [
       {
         loginNumber,
@@ -51,7 +53,7 @@ router.post("/logout", (req, res) => {
     res.send({ code: -1, msg: "参数为空" });
     return;
   }
-  Buyer.find({
+  BuyerModel.find({
     $or: [
       {
         loginNumber,
@@ -97,14 +99,14 @@ router.post("/register", async (req, res) => {
     return;
   }
   try {
-    const findMailBox = await Buyer.find({
+    const findMailBox = await BuyerModel.find({
       mailBox,
     });
     if (findMailBox.length) {
       res.send({ code: -2, msg: "此邮箱已被注册，请找回密码" });
       return;
     }
-    const findLoginNumber = await Buyer.find({
+    const findLoginNumber = await BuyerModel.find({
       loginNumber,
     });
     if (findLoginNumber.length) {
@@ -112,7 +114,7 @@ router.post("/register", async (req, res) => {
       return;
     }
 
-    verificationCodeModel.find({ mailBox }).then((response) => {
+    VerificationCodeModel.find({ mailBox }).then((response) => {
       if (!response.length) {
         res.send({ code: -2, msg: "邮箱验证码不正确" });
         return;
@@ -124,7 +126,7 @@ router.post("/register", async (req, res) => {
       } else if (Date.now() - time >= 300000) {
         res.send({ code: -2, msg: "邮箱验证码失效" });
       } else {
-        Buyer.insertMany({ loginNumber, passWord, buyerName, mailBox })
+        BuyerModel.insertMany({ loginNumber, passWord, buyerName, mailBox })
           .then(async () => {
             const loginToken = await loginCookie.getLoginCookie(loginNumber, 1);
             res.cookie("token", loginToken, { path: "/" });
@@ -142,6 +144,117 @@ router.post("/register", async (req, res) => {
   }
 });
 
+router.post("/getCart", async (req, res) => {
+  const { buyerId } = req.body;
+  if (!buyerId) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  try {
+    CartModel.find({ buyerId })
+      .then((response) => {
+        res.send({ code: 0, msg: "查询成功", content: response });
+      })
+      .catch((err) => {
+        console.log(err);
+        res.send({ code: -2, msg: "查询失败" });
+      });
+  } catch (err) {
+    console.log(err);
+    res.send({ code: -1, msg: "查询失败" });
+  }
+});
+
+router.post("/addCart", async (req, res) => {
+  const { buyerId, commodityNumber, sallerId } = req.body;
+  if (!buyerId || !commodityNumber || !sallerId) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  try {
+    const cartfindResp = CartModel.find({ commodityNumber });
+    if (!!cartfindResp.length) {
+      const updateResp = await CartModel.findByIdAndUpdate(
+        cartfindResp[0]._id,
+        {
+          $set: {
+            updateTime: Date.now(),
+            commodityCount: cartfindResp[0].commodityCount - 1,
+            commodityTotalValue:
+              (cartfindResp[0].commodityCount - 1) *
+              cartfindResp[0].memberValue,
+          },
+        }
+      );
+      res.send({ code: 0, msg: "添加成功", content: updateResp[0] });
+      return;
+    }
+    const obj = {};
+    const commodityResponse = await CommodityModel.find({ commodityNumber });
+    if (!commodityResponse.length) {
+      res.send({ code: 0, msg: "没有该商品" });
+      return;
+    }
+    obj.commodityNumber = commodityNumber;
+    obj.commodityCount = 1;
+    obj.commodityName = commodityResponse[0].commodityName;
+    obj.commodityImgUrl = commodityResponse[0].commodityImgUrl;
+    obj.introduction = commodityResponse[0].introduction;
+    obj.marketValue = commodityResponse[0].marketValue;
+    obj.memberValue = commodityResponse[0].memberValue;
+    obj.classificationNumber = commodityResponse[0].classificationNumber;
+    obj.classificationName = commodityResponse[0].classificationName;
+    obj.commodityTotalValue = obj.commodityCount * obj.memberValue;
+
+    const sallerResponse = await SallerModel.findById(sallerId);
+    if (!sallerResponse) {
+      res.send({ code: 0, msg: "没有该商家" });
+      return;
+    }
+    obj.sallerId = sallerId;
+    obj.sallerName = sallerResponse.sallerName;
+    obj.sallerPhone = sallerResponse.sallerPhone;
+    obj.update = Date.now();
+    const cartResponse = await CartModel.find();
+    obj.cartNumber = `${cartResponse.length}`;
+
+    console.log("Object.keys(obj).length");
+    console.log(Object.keys(obj).length);
+    CartModel.insertMany(obj)
+      .then((response) => {
+        res.send({ code: 0, msg: "添加成功", content: response });
+      })
+      .catch((err) => {
+        console.log(err);
+        res.send({ code: -2, msg: "添加失败" });
+      });
+  } catch (err) {
+    console.log(err);
+    res.send({ code: -1, msg: "添加失败" });
+  }
+});
+
+router.post("/deleteCart", async (req, res) => {
+  const { cardNumber } = req.body;
+  if (!cardNumber) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  try {
+    CartModel.deleteOne({ cartNumber })
+      .then(() => {
+        res.send({ code: 0, msg: "删除成功" });
+      })
+      .catch((err) => {
+        console.log(err);
+        res.send({ code: -2, msg: "删除失败" });
+      });
+  } catch (err) {
+    console.log(err);
+    res.send({ code: -1, msg: "删除失败" });
+  }
+});
+
 router.get("/getCommodity", async (req, res) => {
   const { classificationNumber } = req.query;
   if (!classificationNumber) {
@@ -153,10 +266,9 @@ router.get("/getCommodity", async (req, res) => {
       const findObj = {
         classificationNumber,
       };
-      commodityModel
-        .find(findObj)
+      CommodityModel.find(findObj)
         .then((response) => {
-          const resData = handleCommodity(response);
+          const resData = buyerUtils.handleCommodity(response);
           res.send({ code: 0, msg: "查询成功", content: resData });
         })
         .catch((err) => {
@@ -165,10 +277,9 @@ router.get("/getCommodity", async (req, res) => {
         });
       return;
     }
-    commodityModel
-      .find()
+    CommodityModel.find()
       .then((response) => {
-        const resData = handleCommodity(response);
+        const resData = buyerUtils.handleCommodity(response);
         res.send({ code: 0, msg: "查询成功", content: resData });
       })
       .catch((err) => {
@@ -183,10 +294,9 @@ router.get("/getCommodity", async (req, res) => {
 
 router.get("/getClassification", async (req, res) => {
   try {
-    commodityModel
-      .find()
+    CommodityModel.find()
       .then((response) => {
-        const resData = getClassification(response);
+        const resData = buyerUtils.getClassification(response);
         res.send({ code: 0, msg: "查询成功", content: resData });
       })
       .catch((err) => {
@@ -200,37 +310,3 @@ router.get("/getClassification", async (req, res) => {
 });
 
 module.exports = router;
-
-function handleCommodity(dataArray) {
-  const arr = dataArray;
-  if (!arr.length) {
-    return;
-  }
-  const response = {};
-  Object.keys(commodityClassification.classification).forEach((key) => {
-    response[key] = arr.filter((item) => item.classificationNumber == key);
-  });
-  return response;
-}
-
-function getClassification(dataArray) {
-  const arr = dataArray;
-  if (!arr.length) {
-    return;
-  }
-  const classification = {};
-  Object.keys(commodityClassification.classification).forEach((key) => {
-    const have = arr.some((item) => item.classificationNumber == key);
-    if (have) {
-      classification[key] = {
-        label: commodityClassification.classification[key],
-        key,
-      };
-    }
-  });
-  const response = {
-    classification,
-    vagueClassification: commodityClassification.vagueClassification,
-  };
-  return response;
-}

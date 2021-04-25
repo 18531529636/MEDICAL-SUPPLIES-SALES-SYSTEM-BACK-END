@@ -1,7 +1,8 @@
-const Order = require("./model/orderModel");
-const Commodity = require("./model/commodityModel");
+const Order = require("../model/orderModel");
+const Commodity = require("../model/commodityModel");
 const mongoose = require("mongoose");
-const commodityClassification = require("./data/commodityClassification");
+const commodityClassification = require("../data/commodityClassification");
+const CartModel = require("../model/cartModel");
 
 mongoose.connect("mongodb://localhost/sallsystem", {
   useNewUrlParser: true,
@@ -22,9 +23,9 @@ function insertCommodity() {
   for (let i = 0; i < 200; i++) {
     // 0 1 2 3 4 5 6 7
     const status = Math.floor(Math.random() * 21);
-    const classificationName = commodityClassification[status];
+    const classificationName = commodityClassification.classification[status];
     data.push({
-      commodityNumber: i,
+      commodityNumber: `${i}`,
       commodityName: "手术刀",
       commodityCurrentCount: 22,
       commodityImgUrl: "2whp",
@@ -43,13 +44,16 @@ function insertCommodity() {
   Commodity.insertMany(data)
     .then((response) => {
       console.log(response.length);
+      mongoose.disconnect();
     })
     .catch((err) => {
       console.log("错误");
       console.log(err);
+      mongoose.disconnect();
     });
   Commodity.in;
 }
+
 function insertOrders() {
   const data = [];
   for (let i = 0; i < 100; i++) {
@@ -79,10 +83,52 @@ function insertOrders() {
   Order.insertMany(data)
     .then((response) => {
       console.log(response.length);
+      mongoose.disconnect();
     })
     .catch((err) => {
       console.log("错误");
       console.log(err);
+      mongoose.disconnect();
     });
 }
-insertCommodity();
+
+function insertCart() {
+  const data = [];
+  for (let i = 0; i < 80; i++) {
+    const count = Math.floor(Math.random() * 21);
+    const value = 22;
+    const totalValue = count * value;
+    const status = Math.floor(Math.random() * 21);
+    const classificationName = commodityClassification.classification[status];
+    data.push({
+      cartNumber: `${i}`,
+      update: Date.now(),
+      buyerId: "60826d776b13e31ca4b4bef9",
+      commodityCount: count,
+      commodityTotalValue: totalValue,
+      commodityNumber: i,
+      commodityName: "手术刀",
+      commodityImgUrl: "2whp",
+      introduction: "这是21健康烦恼时并不改变",
+      marketValue: 22,
+      memberValue: 11,
+      sallerId: "60826ead8b586234906b1ef0",
+      sallerName: "whp",
+      sallerPhone: "4564648",
+      classificationNumber: status,
+      classificationName,
+    });
+  }
+
+  CartModel.insertMany(data)
+    .then((response) => {
+      console.log(response.length);
+      mongoose.disconnect();
+    })
+    .catch((err) => {
+      console.log("错误");
+      console.log(err);
+      mongoose.disconnect();
+    });
+}
+insertCart();

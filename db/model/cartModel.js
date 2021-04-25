@@ -1,16 +1,32 @@
 const mongoose = require("mongoose");
 
-const commoditySchema = new mongoose.Schema({
+const cartSchema = new mongoose.Schema({
+  cartNumber: {
+    type: String,
+    require: true,
+  },
+  updateTime: {
+    type: Number,
+    require: true,
+  },
+  buyerId: {
+    type: String,
+    require: true,
+  },
+  commodityCount: {
+    type: Number,
+    require: true,
+  },
+  commodityTotalValue: {
+    type: Number,
+    require: true,
+  },
   commodityNumber: {
     type: String,
     require: true,
   },
   commodityName: {
     type: String,
-    require: true,
-  },
-  commodityCurrentCount: {
-    type: Number,
     require: true,
   },
   commodityImgUrl: {
@@ -49,12 +65,8 @@ const commoditySchema = new mongoose.Schema({
     type: String,
     require: true,
   },
-  setTime: {
-    type: Number,
-    require: true,
-  }
 });
 
-const commodity = mongoose.model("commodity", commoditySchema);
+const cart = mongoose.model("cart", cartSchema);
 
-module.exports = commodity;
+module.exports = cart;

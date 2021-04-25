@@ -1,7 +1,7 @@
 const vagueClassification = [
   [{ title: "手术器械", detailClasification: [0, 1, 2, 3] }],
   [
-    { title: "成像检测治疗", detailClasification: [4, 5, 6, 7, 8, 20, 19] },
+    { title: "检测治疗", detailClasification: [4, 5, 6, 7, 8, 20, 19] },
     { title: "眼口治疗", detailClasification: [14, 15] },
   ],
   [
@@ -38,10 +38,16 @@ const classification = {
   20: "物理治疗器械",
 };
 vagueClassification.forEach((item) => {
-  item.forEach((ele) => {
-    ele.label = ele.detailClasification.map((curItem) => {
-      return classification[curItem];
+  item.map((ele) => {
+    const label = ele.detailClasification.map((curItem) => {
+      return {
+        label: classification[curItem],
+        key: curItem,
+      };
     });
+    return {
+      label,
+    };
   });
 });
 module.exports = {
