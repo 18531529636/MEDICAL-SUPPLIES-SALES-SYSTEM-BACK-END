@@ -71,7 +71,7 @@ function insertOrders() {
       actualPayment: 11,
       sallerId: "60826ead8b586234906b1ef0",
       sallerName: "2whp",
-      buyerId: "1234512315123",
+      buyerId: "60826d776b13e31ca4b4bef9",
       buyerName: "3whp",
       orderStatus: status,
       setTime: Date.now(),
@@ -131,4 +131,4 @@ function insertCart() {
       mongoose.disconnect();
     });
 }
-insertCart();
+insertOrders();

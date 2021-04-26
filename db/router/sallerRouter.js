@@ -152,7 +152,7 @@ router.post("/getOrder", (req, res) => {
     return;
   }
   orderModel
-    .find({ sallerId: sallerId })
+    .find({ sallerId })
     .then((response) => {
       res.send({ code: 0, msg: "查询成功", content: response });
     })

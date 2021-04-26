@@ -4,6 +4,7 @@ const BuyerModel = require("@model/buyerModel");
 const SallerModel = require("@model/sallerModel");
 const VerificationCodeModel = require("@model/verificationCodeModel");
 const CommodityModel = require("@model/commodityModel");
+const OrderModel = require("@model/orderModel");
 const CartModel = require("@model/cartModel");
 const updateVerificationCode = require("@utils/updateVerificationCode");
 const loginCookie = require("@utils/loginCookie");
@@ -165,6 +166,27 @@ router.post("/getCart", async (req, res) => {
   }
 });
 
+router.post("/getOrder", async (req, res) => {
+  const { buyerId } = req.body;
+  if (!buyerId) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  try {
+    OrderModel.find({ buyerId })
+      .then((response) => {
+        res.send({ code: 0, msg: "查询成功", content: response });
+      })
+      .catch((err) => {
+        console.log(err);
+        res.send({ code: -2, msg: "查询失败" });
+      });
+  } catch (err) {
+    console.log(err);
+    res.send({ code: -1, msg: "查询失败" });
+  }
+});
+
 router.post("/addCart", async (req, res) => {
   const { buyerId, commodityNumber, sallerId } = req.body;
   if (!buyerId || !commodityNumber || !sallerId) {
@@ -172,21 +194,21 @@ router.post("/addCart", async (req, res) => {
     return;
   }
   try {
-    const cartfindResp = CartModel.find({ commodityNumber });
+    const cartfindResp = await CartModel.find({ commodityNumber });
     if (!!cartfindResp.length) {
       const updateResp = await CartModel.findByIdAndUpdate(
         cartfindResp[0]._id,
         {
           $set: {
             updateTime: Date.now(),
-            commodityCount: cartfindResp[0].commodityCount - 1,
+            commodityCount: cartfindResp[0].commodityCount + 1,
             commodityTotalValue:
-              (cartfindResp[0].commodityCount - 1) *
+              (cartfindResp[0].commodityCount + 1) *
               cartfindResp[0].memberValue,
           },
         }
       );
-      res.send({ code: 0, msg: "添加成功", content: updateResp[0] });
+      res.send({ code: 0, msg: "添加成功", content: updateResp });
       return;
     }
     const obj = {};
@@ -214,15 +236,13 @@ router.post("/addCart", async (req, res) => {
     obj.sallerId = sallerId;
     obj.sallerName = sallerResponse.sallerName;
     obj.sallerPhone = sallerResponse.sallerPhone;
-    obj.update = Date.now();
+    obj.updateTime = Date.now();
     const cartResponse = await CartModel.find();
     obj.cartNumber = `${cartResponse.length}`;
-
-    console.log("Object.keys(obj).length");
-    console.log(Object.keys(obj).length);
+    obj.buyerId = buyerId;
     CartModel.insertMany(obj)
       .then((response) => {
-        res.send({ code: 0, msg: "添加成功", content: response });
+        res.send({ code: 0, msg: "添加成功", content: response[0] });
       })
       .catch((err) => {
         console.log(err);
@@ -235,24 +255,64 @@ router.post("/addCart", async (req, res) => {
 });
 
 router.post("/deleteCart", async (req, res) => {
-  const { cardNumber } = req.body;
-  if (!cardNumber) {
+  const { cartNumber, deleteCount } = req.body;
+  if (!cartNumber || !deleteCount) {
     res.send({ code: -1, msg: "参数为空" });
     return;
   }
   try {
-    CartModel.deleteOne({ cartNumber })
-      .then(() => {
-        res.send({ code: 0, msg: "删除成功" });
-      })
-      .catch((err) => {
-        console.log(err);
-        res.send({ code: -2, msg: "删除失败" });
-      });
+    if (deleteCount === -1) {
+      CartModel.deleteOne({ cartNumber })
+        .then(() => {
+          res.send({ code: 0, msg: "删除成功" });
+        })
+        .catch((err) => {
+          console.log(err);
+          res.send({ code: -2, msg: "删除失败" });
+        });
+      return;
+    }
+    const updateResp = await CartModel.findAndUpdate(
+      { cartNumber },
+      {
+        $set: {
+          updateTime: Date.now(),
+          commodityCount: cartfindResp[0].commodityCount - deleteCount,
+          commodityTotalValue:
+            (cartfindResp[0].commodityCount + 1) * cartfindResp[0].memberValue,
+        },
+      }
+    );
+    res.send({ code: -2, msg: "删除失败" });
   } catch (err) {
     console.log(err);
     res.send({ code: -1, msg: "删除失败" });
   }
+});
+
+router.post("/setCourierNumber", (req, res) => {
+  const { buyerId, orderNumber, courierNumber } = req.body;
+  if (!buyerId || !orderNumber || !courierNumber) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  OrderModel
+    .findOneAndUpdate(
+      { buyerId, orderNumber },
+      { $set: { backCourierNumber: courierNumber, orderStatus: 6 } }
+    )
+    .then((response) => {
+      console.log(response);
+      if (!response) {
+        res.send({ code: -2, msg: "失败" });
+        return;
+      }
+      res.send({ code: 0, msg: "退货订单快递单号更新成功" });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.send({ code: -1, msg: "失败" });
+    });
 });
 
 router.get("/getCommodity", async (req, res) => {
