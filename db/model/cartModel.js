@@ -58,7 +58,7 @@ const cartSchema = new mongoose.Schema({
     require: true,
   },
   classificationNumber: {
-    type: Number,
+    type: String,
     require: true,
   },
   classificationName: {

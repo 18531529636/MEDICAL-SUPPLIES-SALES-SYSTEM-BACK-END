@@ -5,7 +5,7 @@ const orderSchema = new mongoose.Schema({
     type: String,
     require: true,
   },
-  commodityId: {
+  commodityNumber: {
     type: String,
     require: true,
   },
@@ -13,16 +13,27 @@ const orderSchema = new mongoose.Schema({
     type: String,
     require: true,
   },
-  actualValue: {
-    type: Number,
+  marketValue: {
+    type: String,
+  },
+  memberValue: {
+    type: String,
     require: true,
   },
   commodityCount: {
     type: Number,
     require: true,
   },
-  actualPayment: {
+  commodityTotalValue: {
     type: Number,
+    require: true,
+  },
+  commodityImgUrl: {
+    type: String,
+    require: true,
+  },
+  introduction: {
+    type: String,
     require: true,
   },
   sallerId: {
@@ -33,11 +44,19 @@ const orderSchema = new mongoose.Schema({
     type: String,
     require: true,
   },
+  sallerPhone: {
+    type: String,
+    require: true,
+  },
   buyerId: {
     type: String,
     require: true,
   },
   buyerName: {
+    type: String,
+    require: true,
+  },
+  buyerPhone: {
     type: String,
     require: true,
   },
@@ -51,8 +70,20 @@ const orderSchema = new mongoose.Schema({
   backCourierNumber: {
     type: String,
   },
-  setTime: {
+  updateTime: {
     type: Number,
+    require: true,
+  },
+  receivingAddress: {
+    type: Object,
+    require: true,
+  },
+  classificationNumber: {
+    type: String,
+    require: true,
+  },
+  classificationName: {
+    type: String,
     require: true,
   },
 });

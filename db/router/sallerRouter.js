@@ -26,17 +26,13 @@ router.post("/login", (req, res) => {
     ],
   })
     .then(async (response) => {
-      console.log("response");
-      console.log(response);
       if (!response.length) {
         res.send({ code: -2, msg: "登陆失败，账号或密码错误" });
         return;
       }
       const loginToken = await loginCookie.getLoginCookie(loginNumber, 0);
-      console.log("loginToken");
-      console.log(loginToken);
       updateVerificationCode(loginNumber, "", -1).then(() => {
-        res.cookie("token", loginToken, { path: "/" });
+        res.cookie("sallerToken", loginToken, { path: "/" });
         res.send({ code: 0, msg: "登陆成功" });
       });
     })
@@ -128,9 +124,7 @@ router.post("/register", async (req, res) => {
         Saller.insertMany({ loginNumber, passWord, sallerName, mailBox })
           .then(async () => {
             const loginToken = await loginCookie.getLoginCookie(loginNumber, 0);
-            console.log("loginToken");
-            console.log(loginToken);
-            res.cookie("token", loginToken, { path: "/" });
+            res.cookie("sallerToken", loginToken, { path: "/" });
             res.send({ code: 0, msg: "注册成功" });
           })
           .catch((err) => {

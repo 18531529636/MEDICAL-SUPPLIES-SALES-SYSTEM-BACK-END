@@ -38,7 +38,7 @@ router.post("/login", (req, res) => {
       const loginToken = await loginCookie.getLoginCookie(loginNumber, 1);
 
       updateVerificationCode(loginNumber, "", -1).then(() => {
-        res.cookie("token", loginToken, { path: "/" });
+        res.cookie("buyerToken", loginToken, { path: "/" });
         res.send({ code: 0, msg: "登陆成功" });
       });
     })
@@ -130,7 +130,7 @@ router.post("/register", async (req, res) => {
         BuyerModel.insertMany({ loginNumber, passWord, buyerName, mailBox })
           .then(async () => {
             const loginToken = await loginCookie.getLoginCookie(loginNumber, 1);
-            res.cookie("token", loginToken, { path: "/" });
+            res.cookie("buyerToken", loginToken, { path: "/" });
             res.send({ code: 0, msg: "注册成功" });
           })
           .catch((err) => {
@@ -296,11 +296,10 @@ router.post("/setCourierNumber", (req, res) => {
     res.send({ code: -1, msg: "参数为空" });
     return;
   }
-  OrderModel
-    .findOneAndUpdate(
-      { buyerId, orderNumber },
-      { $set: { backCourierNumber: courierNumber, orderStatus: 6 } }
-    )
+  OrderModel.findOneAndUpdate(
+    { buyerId, orderNumber },
+    { $set: { backCourierNumber: courierNumber, orderStatus: 6 } }
+  )
     .then((response) => {
       console.log(response);
       if (!response) {
@@ -313,6 +312,57 @@ router.post("/setCourierNumber", (req, res) => {
       console.log(err);
       res.send({ code: -1, msg: "失败" });
     });
+});
+
+router.post("/setOrder", async (req, res) => {
+  const { cartNumberList, receivingAddress, buyerId } = req.body;
+  if (
+    !cartNumberList ||
+    !receivingAddress ||
+    !buyerId ||
+    !cartNumberList.length
+  ) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  const searchCondition = cartNumberList.map((item) => {
+    return {
+      cartNumber: item,
+    };
+  });
+  const buyerInfo = await BuyerModel.findById(buyerId);
+  console.log(buyerInfo);
+  const orderList = await OrderModel.find();
+  const cartOrderList = await CartModel.find({ $or: searchCondition });
+  const insertOrderList = cartOrderList.map((item) => {
+    return {
+      buyerId,
+      buyerName: buyerInfo.buyerName,
+      buyerPhone: buyerInfo.buyerPhone,
+      receivingAddress,
+      sallerId: item.sallerId,
+      sallerName: item.sallerName,
+      sallerPhone: item.sallerPhone,
+      commodityNumber: item.commodityNumber,
+      commodityCount: item.commodityNumber,
+      commodityName: item.commodityName,
+      commodityImgUrl: item.commodityImgUrl,
+      introduction: item.introduction,
+      marketValue: item.marketValue,
+      memberValue: item.memberValue,
+      classificationNumber: item.classificationNumber,
+      classificationName: item.classificationName,
+      commodityTotalValue: item.commodityTotalValue,
+      updateTime: Date.now(),
+      orderNumber: orderList.length,
+      orderStatus: 0,
+      goCourierNumber: "",
+      backCourierNumber: "",
+    };
+  });
+
+  CartModel.insertMany({})
+  console.log(insertOrderList);
 });
 
 router.get("/getCommodity", async (req, res) => {

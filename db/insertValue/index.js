@@ -64,19 +64,21 @@ function insertOrders() {
       : "1232222222222222222";
     data.push({
       orderNumber: i,
-      commodityId: i,
+      commodityNumber: i,
       commodityName: "手术刀",
-      actualValue: 12,
+      memberValue: 12,
+      marketValue: 12,
       commodityCount: 22,
-      actualPayment: 11,
+      commodityTotalValue: 11,
       sallerId: "60826ead8b586234906b1ef0",
       sallerName: "2whp",
       buyerId: "60826d776b13e31ca4b4bef9",
       buyerName: "3whp",
       orderStatus: status,
-      setTime: Date.now(),
+      updateTime: Date.now(),
       goCourierNumber,
       backCourierNumber,
+      receivingAddress: "",
     });
   }
 
