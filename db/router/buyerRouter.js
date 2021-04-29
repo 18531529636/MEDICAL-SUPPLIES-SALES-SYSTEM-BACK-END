@@ -315,54 +315,60 @@ router.post("/setCourierNumber", (req, res) => {
 });
 
 router.post("/setOrder", async (req, res) => {
-  const { cartNumberList, receivingAddress, buyerId } = req.body;
-  if (
-    !cartNumberList ||
-    !receivingAddress ||
-    !buyerId ||
-    !cartNumberList.length
-  ) {
-    res.send({ code: -1, msg: "参数为空" });
-    return;
-  }
-  const searchCondition = cartNumberList.map((item) => {
-    return {
-      cartNumber: item,
-    };
-  });
-  const buyerInfo = await BuyerModel.findById(buyerId);
-  console.log(buyerInfo);
-  const orderList = await OrderModel.find();
-  const cartOrderList = await CartModel.find({ $or: searchCondition });
-  const insertOrderList = cartOrderList.map((item) => {
-    return {
+  try {
+    const { cartNumberList, receivingAddress, buyerId } = req.body;
+    if (
+      !cartNumberList ||
+      !receivingAddress ||
+      !buyerId ||
+      !cartNumberList.length
+    ) {
+      res.send({ code: -1, msg: "参数为空" });
+      return;
+    }
+    const searchCondition = cartNumberList.map((item) => {
+      return {
+        cartNumber: item,
+      };
+    });
+    const buyerInfo = await BuyerModel.findById(buyerId);
+    const orderList = await OrderModel.find();
+    const cartOrderList = await CartModel.find({ $or: searchCondition });
+    const insertCommodityList = cartOrderList.map((item) => {
+      return {
+        commodityNumber: item.commodityNumber,
+        commodityCount: item.commodityNumber,
+        commodityName: item.commodityName,
+        commodityImgUrl: item.commodityImgUrl,
+        commodityTotalValue: item.commodityTotalValue,
+        introduction: item.introduction,
+        marketValue: item.marketValue,
+        memberValue: item.memberValue,
+        classificationNumber: item.classificationNumber,
+        classificationName: item.classificationName,
+        sallerId: item.sallerId,
+        sallerName: item.sallerName,
+        sallerPhone: item.sallerPhone,
+        goCourierNumber: "",
+        backCourierNumber: "",
+      };
+    });
+    const insertOrderList = {
+      orderNumber: orderList.length,
+      orderStatus: 0,
       buyerId,
       buyerName: buyerInfo.buyerName,
       buyerPhone: buyerInfo.buyerPhone,
       receivingAddress,
-      sallerId: item.sallerId,
-      sallerName: item.sallerName,
-      sallerPhone: item.sallerPhone,
-      commodityNumber: item.commodityNumber,
-      commodityCount: item.commodityNumber,
-      commodityName: item.commodityName,
-      commodityImgUrl: item.commodityImgUrl,
-      introduction: item.introduction,
-      marketValue: item.marketValue,
-      memberValue: item.memberValue,
-      classificationNumber: item.classificationNumber,
-      classificationName: item.classificationName,
-      commodityTotalValue: item.commodityTotalValue,
+      commodityList: insertCommodityList,
       updateTime: Date.now(),
-      orderNumber: orderList.length,
-      orderStatus: 0,
-      goCourierNumber: "",
-      backCourierNumber: "",
     };
-  });
-
-  CartModel.insertMany({})
-  console.log(insertOrderList);
+    const insertOrderReps = CartModel.insertMany(insertOrderList);
+    console.log();
+    // console.log(insertOrderList);
+  } catch (err) {
+    console.log(err);
+  }
 });
 
 router.get("/getCommodity", async (req, res) => {

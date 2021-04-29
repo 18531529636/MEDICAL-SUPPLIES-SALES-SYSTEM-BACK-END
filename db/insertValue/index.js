@@ -57,6 +57,8 @@ function insertCommodity() {
 function insertOrders() {
   const data = [];
   for (let i = 0; i < 100; i++) {
+    const classificationStatus = Math.floor(Math.random() * 21);
+    const classificationName = commodityClassification.classification[classificationStatus];
     const status = Math.floor(Math.random() * 8);
     const goCourierNumber = status === 0 ? "" : "1234213145123";
     const backCourierNumber = [0, 1, 2].includes(status)
@@ -64,21 +66,33 @@ function insertOrders() {
       : "1232222222222222222";
     data.push({
       orderNumber: i,
-      commodityNumber: i,
-      commodityName: "手术刀",
-      memberValue: 12,
-      marketValue: 12,
-      commodityCount: 22,
-      commodityTotalValue: 11,
-      sallerId: "60826ead8b586234906b1ef0",
-      sallerName: "2whp",
+      orderStatus: status,
       buyerId: "60826d776b13e31ca4b4bef9",
       buyerName: "3whp",
-      orderStatus: status,
-      updateTime: Date.now(),
+      buyerPhone: "145156445",
+      receivingAddress: {
+        province: "北京",
+        city: "北京市",
+        area: "大兴区",
+        town: "西红门镇",
+        detailAddress: "蜂窝公寓",
+      },
+      sallerId: "60826ead8b586234906b1ef0",
+      sallerName: "2whp",
+      sallerPhone: "46451654",
+      commodityNumber: i,
+      commodityCount: 22,
+      commodityName: "手术刀",
+      commodityImgUrl: "a/b/1.jpg",
+      commodityTotalValue: 11,
+      introduction: '464548',
+      marketValue: 12,
+      memberValue: 12,
+      classificationNumber: classificationStatus,
+      classificationName: classificationName,
       goCourierNumber,
       backCourierNumber,
-      receivingAddress: "",
+      updateTime: Date.now(),
     });
   }
 
