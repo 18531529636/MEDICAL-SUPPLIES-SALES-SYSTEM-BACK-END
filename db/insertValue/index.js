@@ -3,6 +3,8 @@ const Commodity = require("../model/commodityModel");
 const mongoose = require("mongoose");
 const commodityClassification = require("../data/commodityClassification");
 const CartModel = require("../model/cartModel");
+const BuyerModel = require("../model/buyerModel");
+const SallerModel = require("../model/sallerModel");
 
 mongoose.connect("mongodb://localhost/sallsystem", {
   useNewUrlParser: true,
@@ -32,7 +34,7 @@ function insertCommodity() {
       introduction: "这是21健康烦恼时并不改变",
       marketValue: 22,
       memberValue: 11,
-      sallerId: "60826ead8b586234906b1ef0",
+      sallerId: "6091fc3fc33f551690f486e0",
       sallerName: "whp",
       sallerPhone: "4564648",
       classificationNumber: status,
@@ -54,20 +56,30 @@ function insertCommodity() {
   Commodity.in;
 }
 
-function insertOrders() {
+async function insertOrders() {
   const data = [];
   for (let i = 0; i < 100; i++) {
     const classificationStatus = Math.floor(Math.random() * 21);
-    const classificationName = commodityClassification.classification[classificationStatus];
+    const classificationName =
+      commodityClassification.classification[classificationStatus];
     const status = Math.floor(Math.random() * 8);
     const goCourierNumber = status === 0 ? "" : "1234213145123";
     const backCourierNumber = [0, 1, 2].includes(status)
       ? ""
       : "1232222222222222222";
+    const commodities = await Commodity.find();
+    const commodityIndex = Math.floor(Math.random() * (commodities.length - 2));
+    const commodityLength = Math.floor(
+      Math.random() * (commodities.length - 1 - commodityIndex)
+    );
+    const commodityList = commodities.filter(
+      (item, index) =>
+        index >= commodityIndex && index <= commodityLength + commodityIndex
+    );
     data.push({
       orderNumber: i,
       orderStatus: status,
-      buyerId: "60826d776b13e31ca4b4bef9",
+      buyerId: "6091fba16edee90a74b64046",
       buyerName: "3whp",
       buyerPhone: "145156445",
       receivingAddress: {
@@ -77,21 +89,7 @@ function insertOrders() {
         town: "西红门镇",
         detailAddress: "蜂窝公寓",
       },
-      sallerId: "60826ead8b586234906b1ef0",
-      sallerName: "2whp",
-      sallerPhone: "46451654",
-      commodityNumber: i,
-      commodityCount: 22,
-      commodityName: "手术刀",
-      commodityImgUrl: "a/b/1.jpg",
-      commodityTotalValue: 11,
-      introduction: '464548',
-      marketValue: 12,
-      memberValue: 12,
-      classificationNumber: classificationStatus,
-      classificationName: classificationName,
-      goCourierNumber,
-      backCourierNumber,
+      commodityList,
       updateTime: Date.now(),
     });
   }
@@ -138,6 +136,45 @@ function insertCart() {
 
   CartModel.insertMany(data)
     .then((response) => {
+      console.log(response.length);
+      mongoose.disconnect();
+    })
+    .catch((err) => {
+      console.log("错误");
+      console.log(err);
+      mongoose.disconnect();
+    });
+}
+
+function insertBuyer() {
+  BuyerModel.insertMany({
+    buyer: "whp",
+    phoneNumber: "3124213",
+    loginNumber: "qwe",
+    passWord: "a123456",
+    mailBox: "12",
+  })
+    .then((response) => {
+      console.log(response);
+      console.log(response.length);
+      mongoose.disconnect();
+    })
+    .catch((err) => {
+      console.log("错误");
+      console.log(err);
+      mongoose.disconnect();
+    });
+}
+function insertSaller() {
+  SallerModel.insertMany({
+    buyer: "whp",
+    phoneNumber: "3124213",
+    loginNumber: "qwe",
+    passWord: "a123456",
+    mailBox: "12",
+  })
+    .then((response) => {
+      console.log(response);
       console.log(response.length);
       mongoose.disconnect();
     })

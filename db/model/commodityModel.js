@@ -52,7 +52,7 @@ const commoditySchema = new mongoose.Schema({
   setTime: {
     type: Number,
     require: true,
-  }
+  },
 });
 
 const commodity = mongoose.model("commodity", commoditySchema);
