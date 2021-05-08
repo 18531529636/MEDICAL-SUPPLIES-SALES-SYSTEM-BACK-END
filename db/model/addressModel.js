@@ -1,9 +1,19 @@
 const mongoose = require("mongoose");
 
 const userAddressSchema = new mongoose.Schema({
+  addressNumber: {
+    type: String,
+    require: true,
+  },
   loginNumber: {
     type: String,
     require: true,
+  },
+  receivePeople: {
+    type: String,
+  },
+  receivePhone: {
+    type: String,
   },
   province: {
     // 省

@@ -5,7 +5,15 @@ const orderSchema = new mongoose.Schema({
     type: String,
     require: true,
   },
-  orderStatus: {
+  temporary: {
+    type: Boolean,
+    require: true,
+  },
+  temporaryNumber: {
+    type: String,
+    require: true,
+  },
+  totalValue: {
     type: Number,
     require: true,
   },

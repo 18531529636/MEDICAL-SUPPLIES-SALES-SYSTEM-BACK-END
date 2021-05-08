@@ -34,7 +34,7 @@ function insertCommodity() {
       introduction: "这是21健康烦恼时并不改变",
       marketValue: 22,
       memberValue: 11,
-      sallerId: "6091fc3fc33f551690f486e0",
+      sallerId: "60950b8b9d6fbb31b0f63d50",
       sallerName: "whp",
       sallerPhone: "4564648",
       classificationNumber: status,
@@ -72,16 +72,22 @@ async function insertOrders() {
     const commodityLength = Math.floor(
       Math.random() * (commodities.length - 1 - commodityIndex)
     );
-    const commodityList = commodities.filter(
-      (item, index) =>
-        index >= commodityIndex && index <= commodityLength + commodityIndex
-    );
+    const commodityList = commodities.filter((item, index) => {
+      if (index >= commodityIndex && index <= 5 + commodityIndex) {
+        return {
+          ...item,
+          totalValue: item.commodityCurrentCount * item.memberValue,
+        };
+      }
+      return false;
+    });
     data.push({
       orderNumber: i,
       orderStatus: status,
-      buyerId: "6091fba16edee90a74b64046",
+      buyerId: "60950ed34a5e0c1a7881dbf0",
       buyerName: "3whp",
       buyerPhone: "145156445",
+      totalValue: commodityList.reduce((sum, item) => sum + item),
       receivingAddress: {
         province: "北京",
         city: "北京市",
@@ -165,9 +171,10 @@ function insertBuyer() {
       mongoose.disconnect();
     });
 }
+
 function insertSaller() {
   SallerModel.insertMany({
-    buyer: "whp",
+    sallerName: "whp",
     phoneNumber: "3124213",
     loginNumber: "qwe",
     passWord: "a123456",

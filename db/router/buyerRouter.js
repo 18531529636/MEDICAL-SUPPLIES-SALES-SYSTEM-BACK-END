@@ -6,6 +6,7 @@ const VerificationCodeModel = require("@model/verificationCodeModel");
 const CommodityModel = require("@model/commodityModel");
 const OrderModel = require("@model/orderModel");
 const CartModel = require("@model/cartModel");
+const AddressModel = require("@model/addressModel");
 const updateVerificationCode = require("@utils/updateVerificationCode");
 const loginCookie = require("@utils/loginCookie");
 const buyerUtils = require("./buyerUtils");
@@ -81,6 +82,25 @@ router.post("/logout", (req, res) => {
     });
 });
 
+router.post("/getUserInfo", async (req, res) => {
+  const { loginNumber, mailBox } = req.body;
+  if (!loginNumber || !mailBox) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  const userInfo = {};
+  try {
+    const buyerInfo = await BuyerModel.find({ loginNumber });
+    userInfo.buyerName = buyerInfo.buyerName;
+    userInfo.buyerId = buyerInfo._id;
+    userInfo.buyerNumber = loginNumber;
+    const verificationCodeInfo = await VerificationCodeModel.find({ mailBox });
+    userInfo.invitationCode = verificationCodeInfo.codeNumber;
+  } catch (err) {
+    console.log(err);
+  }
+});
+
 router.post("/register", async (req, res) => {
   const {
     loginNumber,
@@ -88,13 +108,15 @@ router.post("/register", async (req, res) => {
     buyerName,
     passWord,
     mailBox,
+    address,
   } = req.body;
   if (
     !loginNumber ||
     !passWord ||
     !buyerName ||
     !mailBox ||
-    !verificationCode
+    !verificationCode ||
+    !address
   ) {
     res.send({ code: -1, msg: "参数为空" });
     return;
@@ -145,45 +167,159 @@ router.post("/register", async (req, res) => {
   }
 });
 
-router.post("/getCart", async (req, res) => {
-  const { buyerId } = req.body;
-  if (!buyerId) {
+router.post("/setAddress", async (req, res) => {
+  const {
+    loginNumber,
+    province,
+    city,
+    country,
+    town,
+    detailedAddress,
+    receivePeople,
+    receivePhone,
+  } = req.body;
+  if (
+    !loginNumber ||
+    !province ||
+    !city ||
+    !country ||
+    !town ||
+    !detailedAddress ||
+    !receivePeople ||
+    !receivePhone
+  ) {
     res.send({ code: -1, msg: "参数为空" });
     return;
   }
+  const findAddress = await AddressModel.find();
+  let defaultChoose = false;
+  if (!findAddress.length) {
+    defaultChoose = true;
+  }
+  AddressModel.insertMany({
+    addressNumber: findAddress.length,
+    loginNumber,
+    province,
+    city,
+    country,
+    town,
+    detailedAddress,
+    receivePeople,
+    receivePhone,
+    defaultChoose,
+  })
+    .then((response) => {
+      console.log(response);
+      if (!response) {
+        res.send({ code: -2, msg: "失败" });
+        return;
+      }
+      res.send({ code: 0, msg: "新建收货地址成功" });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.send({ code: -1, msg: "失败" });
+    });
+});
+
+router.post("/getAddress", (req, res) => {
+  const { loginNumber } = req.body;
+  if (!loginNumber) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  AddressModel.find({
+    loginNumber,
+  })
+    .then((response) => {
+      if (!response) {
+        res.send({ code: -2, msg: "失败" });
+        return;
+      }
+      res.send({ code: 0, msg: "成功", content: response });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.send({ code: -1, msg: "失败" });
+    });
+});
+
+router.post("/setDefaultAddress", async (req, res) => {
   try {
-    CartModel.find({ buyerId })
-      .then((response) => {
-        res.send({ code: 0, msg: "查询成功", content: response });
-      })
-      .catch((err) => {
-        console.log(err);
-        res.send({ code: -2, msg: "查询失败" });
-      });
+    const { loginNumber, addressNumber } = req.body;
+    if (!loginNumber || !addressNumber) {
+      res.send({ code: -1, msg: "参数为空" });
+      return;
+    }
+    const findAddressList = await AddressModel.find({
+      loginNumber,
+    });
+
+    findAddressList.forEach(async (item) => {
+      if (item.addressNumber == addressNumber) {
+        await AddressModel.findOneAndUpdate(
+          {
+            addressNumber: item.addressNumber,
+            loginNumber,
+          },
+          { $set: { defaultChoose: true } }
+        );
+        return;
+      }
+      await AddressModel.findOneAndUpdate(
+        {
+          addressNumber: item.addressNumber,
+          loginNumber,
+        },
+        { $set: { defaultChoose: false } }
+      );
+    });
+    res.send({ code: 0, msg: "成功" });
+
+    // findAddressList.some(async (item) => {
+    //   if (item.defaultChoose) {
+    //     AddressModel.findOneAndUpdate(
+    //       {
+    //         addressNumber: item.addressNumber,
+    //         loginNumber,
+    //       },
+    //       { $set: { defaultChoose: false } }
+    //     ).then(async () => {
+    //       AddressModel.findOneAndUpdate(
+    //         {
+    //           addressNumber: addressNumber,
+    //           loginNumber,
+    //         },
+    //         { $set: { defaultChoose: false } }
+    //       ).then(() => {
+    //         res.send({ code: 0, msg: "成功" });
+    //       });
+    //     });
+    //     return true;
+    //   }
+    //   return false;
+    // });
   } catch (err) {
     console.log(err);
-    res.send({ code: -1, msg: "查询失败" });
+    res.send({ code: -1, msg: "失败" });
   }
 });
 
-router.post("/getOrder", async (req, res) => {
-  const { buyerId } = req.body;
-  if (!buyerId) {
-    res.send({ code: -1, msg: "参数为空" });
-    return;
-  }
+router.post("/deleteAddress", async (req, res) => {
   try {
-    OrderModel.find({ buyerId })
-      .then((response) => {
-        res.send({ code: 0, msg: "查询成功", content: response });
-      })
-      .catch((err) => {
-        console.log(err);
-        res.send({ code: -2, msg: "查询失败" });
-      });
+    const { loginNumber, addressNumber } = req.body;
+    if (!loginNumber || !addressNumber) {
+      res.send({ code: -1, msg: "参数为空" });
+      return;
+    }
+    await AddressModel.deleteOne({
+      loginNumber,
+      addressNumber,
+    });
+    res.send({ code: 0, msg: "成功" });
   } catch (err) {
     console.log(err);
-    res.send({ code: -1, msg: "查询失败" });
+    res.send({ code: -1, msg: "失败" });
   }
 });
 
@@ -235,11 +371,12 @@ router.post("/addCart", async (req, res) => {
     }
     obj.sallerId = sallerId;
     obj.sallerName = sallerResponse.sallerName;
-    obj.sallerPhone = sallerResponse.sallerPhone;
+    obj.sallerPhone = sallerResponse.phoneNumber;
     obj.updateTime = Date.now();
     const cartResponse = await CartModel.find();
     obj.cartNumber = `${cartResponse.length}`;
     obj.buyerId = buyerId;
+    console.log(obj);
     CartModel.insertMany(obj)
       .then((response) => {
         res.send({ code: 0, msg: "添加成功", content: response[0] });
@@ -251,6 +388,54 @@ router.post("/addCart", async (req, res) => {
   } catch (err) {
     console.log(err);
     res.send({ code: -1, msg: "添加失败" });
+  }
+});
+
+router.post("/getCart", async (req, res) => {
+  const { buyerId } = req.body;
+  if (!buyerId) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  try {
+    CartModel.find({ buyerId })
+      .then((response) => {
+        res.send({ code: 0, msg: "查询成功", content: response });
+      })
+      .catch((err) => {
+        console.log(err);
+        res.send({ code: -2, msg: "查询失败" });
+      });
+  } catch (err) {
+    console.log(err);
+    res.send({ code: -1, msg: "查询失败" });
+  }
+});
+
+router.post("/getCartDetail", async (req, res) => {
+  const { buyerId, cartNumberList } = req.body;
+  if (!buyerId || !cartNumberList || !cartNumberList.length) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  const findCondition = cartNumberList.map((item) => {
+    return {
+      buyerId,
+      cartNumber: item,
+    };
+  });
+  try {
+    CartModel.find({ $or: findCondition })
+      .then((response) => {
+        res.send({ code: 0, msg: "查询成功", content: response });
+      })
+      .catch((err) => {
+        console.log(err);
+        res.send({ code: -2, msg: "查询失败" });
+      });
+  } catch (err) {
+    console.log(err);
+    res.send({ code: -1, msg: "查询失败" });
   }
 });
 
@@ -336,6 +521,7 @@ router.post("/setOrder", async (req, res) => {
     const cartOrderList = await CartModel.find({ $or: searchCondition });
     const insertCommodityList = cartOrderList.map((item) => {
       return {
+        commodityStatus: "0",
         commodityNumber: item.commodityNumber,
         commodityCount: item.commodityNumber,
         commodityName: item.commodityName,
@@ -353,21 +539,59 @@ router.post("/setOrder", async (req, res) => {
         backCourierNumber: "",
       };
     });
-    const insertOrderList = {
-      orderNumber: orderList.length,
-      orderStatus: 0,
-      buyerId,
-      buyerName: buyerInfo.buyerName,
-      buyerPhone: buyerInfo.buyerPhone,
-      receivingAddress,
-      commodityList: insertCommodityList,
-      updateTime: Date.now(),
-    };
-    const insertOrderReps = CartModel.insertMany(insertOrderList);
-    console.log();
-    // console.log(insertOrderList);
+    const sallerClassifycaton = [];
+    insertCommodityList.forEach((item) => {
+      if (!sallerClassifycaton.includes(item.sallerId)) {
+        sallerClassifycaton.push(item.sallerId);
+      }
+    });
+    const insertOrderList = sallerClassifycaton.map((item, index) => {
+      const commodityList = insertCommodityList.filter(
+        (ele) => ele.sallerId === item
+      );
+      const totalValue = commodityList.reduce((sum, item, index) => {
+        return index === 1
+          ? sum.commodityTotalValue + item.commodityTotalValue
+          : sum + item.commodityTotalValue;
+      });
+      return {
+        orderNumber: orderList.length + index,
+        temporary: true,
+        temporaryNumber: orderList.length,
+        buyerId,
+        buyerName: buyerInfo.buyerName,
+        buyerPhone: buyerInfo.phoneNumber,
+        receivingAddress,
+        totalValue,
+        commodityList,
+        updateTime: Date.now(),
+      };
+    });
+    const insertOrderReps = await OrderModel.insertMany(insertOrderList);
+    res.send({ code: 0, msg: "成功", orderList: insertOrderReps });
   } catch (err) {
     console.log(err);
+  }
+});
+
+router.post("/getOrder", async (req, res) => {
+  const { buyerId } = req.body;
+  if (!buyerId) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  try {
+    OrderModel.find({ buyerId, temporary: false })
+      .then((response) => {
+        res.send({ code: 0, msg: "查询成功", content: response });
+      })
+      .catch((err) => {
+        console.log(err);
+        res.send({ code: -2, msg: "查询失败" });
+      });
+  } catch (err) {
+    console.log(err);
+    res.send({ code: -1, msg: "查询失败" });
   }
 });
 
