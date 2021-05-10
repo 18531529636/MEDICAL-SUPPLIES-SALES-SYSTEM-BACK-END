@@ -91,11 +91,10 @@ router.post("/getUserInfo", async (req, res) => {
   const userInfo = {};
   try {
     const buyerInfo = await BuyerModel.find({ loginNumber });
-    userInfo.buyerName = buyerInfo.buyerName;
-    userInfo.buyerId = buyerInfo._id;
+    userInfo.buyerName = buyerInfo[0].buyerName;
+    userInfo.buyerId = buyerInfo[0]._id;
     userInfo.buyerNumber = loginNumber;
-    const verificationCodeInfo = await VerificationCodeModel.find({ mailBox });
-    userInfo.invitationCode = verificationCodeInfo.codeNumber;
+    res.send({ code: 0, msg: "成功", content: userInfo });
   } catch (err) {
     console.log(err);
   }
@@ -236,6 +235,7 @@ router.post("/getAddress", (req, res) => {
         res.send({ code: -2, msg: "失败" });
         return;
       }
+      response.sort((pre, next) => next.defaultChoose - pre.defaultChoose);
       res.send({ code: 0, msg: "成功", content: response });
     })
     .catch((err) => {
@@ -501,18 +501,19 @@ router.post("/setCourierNumber", (req, res) => {
 
 router.post("/setOrder", async (req, res) => {
   try {
-    const { cartNumberList, receivingAddress, buyerId } = req.body;
+    const { commodityList, receivingAddress, buyerId } = req.body;
     if (
-      !cartNumberList ||
+      !commodityList ||
       !receivingAddress ||
       !buyerId ||
-      !cartNumberList.length
+      !commodityList.length
     ) {
       res.send({ code: -1, msg: "参数为空" });
       return;
     }
-    const searchCondition = cartNumberList.map((item) => {
+    const searchCondition = commodityList.map((item) => {
       return {
+        buyerId,
         cartNumber: item,
       };
     });
@@ -568,6 +569,7 @@ router.post("/setOrder", async (req, res) => {
       };
     });
     const insertOrderReps = await OrderModel.insertMany(insertOrderList);
+    console.log(insertOrderReps)
     res.send({ code: 0, msg: "成功", orderList: insertOrderReps });
   } catch (err) {
     console.log(err);
@@ -582,6 +584,27 @@ router.post("/getOrder", async (req, res) => {
   }
   try {
     OrderModel.find({ buyerId, temporary: false })
+      .then((response) => {
+        res.send({ code: 0, msg: "查询成功", content: response });
+      })
+      .catch((err) => {
+        console.log(err);
+        res.send({ code: -2, msg: "查询失败" });
+      });
+  } catch (err) {
+    console.log(err);
+    res.send({ code: -1, msg: "查询失败" });
+  }
+});
+
+router.post("/getTemporaryOrder", async (req, res) => {
+  const { buyerId } = req.body;
+  if (!buyerId) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  try {
+    OrderModel.find({ buyerId, temporary: true })
       .then((response) => {
         res.send({ code: 0, msg: "查询成功", content: response });
       })

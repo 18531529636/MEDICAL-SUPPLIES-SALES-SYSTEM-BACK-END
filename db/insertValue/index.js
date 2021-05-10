@@ -39,7 +39,7 @@ function insertCommodity() {
       sallerPhone: "4564648",
       classificationNumber: status,
       classificationName,
-      setTime: Date.now(),
+      updateTime: Date.now(),
     });
   }
 
@@ -53,7 +53,6 @@ function insertCommodity() {
       console.log(err);
       mongoose.disconnect();
     });
-  Commodity.in;
 }
 
 async function insertOrders() {
@@ -191,4 +190,4 @@ function insertSaller() {
       mongoose.disconnect();
     });
 }
-insertOrders();
+insertCommodity();

@@ -49,7 +49,7 @@ const commoditySchema = new mongoose.Schema({
     type: String,
     require: true,
   },
-  setTime: {
+  updateTime: {
     type: Number,
     require: true,
   },

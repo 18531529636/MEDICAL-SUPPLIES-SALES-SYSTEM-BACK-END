@@ -2,9 +2,11 @@ const express = require("express");
 const router = express.Router();
 const Saller = require("@model/sallerModel");
 const verificationCodeModel = require("@model/verificationCodeModel");
+const CommodityModel = require("@model/commodityModel");
 const orderModel = require("@model/orderModel");
 const loginCookie = require("@utils/loginCookie");
 const updateVerificationCode = require("@utils/updateVerificationCode");
+const { classification } = require("@data/commodityClassification");
 const getCrypto = require("@utils/getCrypto");
 
 router.post("/login", (req, res) => {
@@ -154,6 +156,96 @@ router.post("/getOrder", (req, res) => {
       console.log(err);
       res.send({ code: -2, msg: "查询错误" });
     });
+});
+
+router.post("/createMyCommodity", async (req, res) => {
+  const { createInfo, userId } = req.body;
+  if (!createInfo || !userId) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  try {
+    const sallerInfo = Saller.findById(userId);
+    const commodityList = await CommodityModel.find();
+    const insertData = {
+      commodityNumber: commodityList.length,
+      commodityName: createInfo.commodityName,
+      commodityCurrentCount: createInfo.commodityCurrentCount,
+      commodityImgUrl: "test",
+      introduction: createInfo.commodityCurrentCount,
+      marketValue: createInfo.marketValue,
+      memberValue: createInfo.memberValue,
+      sallerId: userId,
+      sallerName: sallerInfo.sallerName,
+      sallerPhone: "4564648",
+      classificationNumber: createInfo.classificationNumber,
+      classificationName: classification[createInfo.classificationNumber],
+      updateTime: Date.now(),
+    };
+    CommodityModel.insertMany(insertData).then((response) => {
+      res.send({ code: 0, msg: "成功", content: response });
+      console.log(response.length);
+    });
+  } catch (err) {
+    console.log(err);
+    res.send({ code: -1, msg: "出错" });
+  }
+});
+router.post("/getMyCommodity", async (req, res) => {
+  const { userId } = req.body;
+  if (!userId) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  try {
+    const commodityList = await CommodityModel.find({ sallerId: userId });
+    commodityList.sort((pre, next) => next.updateTime - pre.updateTime);
+    res.send({ code: 0, msg: "成功", content: commodityList });
+  } catch (err) {
+    console.log(err);
+    res.send({ code: -1, msg: "出错" });
+  }
+});
+
+router.post("/updateCommodity", async (req, res) => {
+  const { updateCommodity } = req.body;
+  if (!updateCommodity) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  try {
+    const updateResponse = await CommodityModel.findOneAndUpdate(
+      { commodityNumber: updateCommodity.commodityNumber },
+      {
+        $set: {
+          commodityName: updateCommodity.commodityName,
+          marketValue: updateCommodity.marketValue,
+          memberValue: updateCommodity.memberValue,
+          commodityCurrentCount: updateCommodity.commodityCurrentCount,
+          updateTime: Date.now(),
+        },
+      }
+    );
+    res.send({ code: 0, msg: "成功", content: updateResponse });
+  } catch (err) {
+    console.log(err);
+    res.send({ code: -1, msg: "出错" });
+  }
+});
+
+router.post("/deleteCommodity", async (req, res) => {
+  const { commodityNumber } = req.body;
+  if (!commodityNumber) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  try {
+    const updateResponse = await CommodityModel.deleteOne({ commodityNumber });
+    res.send({ code: 0, msg: "成功", content: updateResponse });
+  } catch (err) {
+    console.log(err);
+    res.send({ code: -1, msg: "出错" });
+  }
 });
 
 router.post("/setCourierNumber", (req, res) => {
