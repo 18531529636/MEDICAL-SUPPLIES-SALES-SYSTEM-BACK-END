@@ -38,16 +38,14 @@ const classification = {
   20: "物理治疗器械",
 };
 vagueClassification.forEach((item) => {
-  item.map((ele) => {
+  item.forEach((ele) => {
     const label = ele.detailClasification.map((curItem) => {
       return {
         label: classification[curItem],
         key: curItem,
       };
     });
-    return {
-      label,
-    };
+    ele.label = label
   });
 });
 module.exports = {

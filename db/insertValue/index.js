@@ -153,7 +153,7 @@ function insertCart() {
 
 function insertBuyer() {
   BuyerModel.insertMany({
-    buyer: "whp",
+    buyerName: "whp",
     phoneNumber: "3124213",
     loginNumber: "qwe",
     passWord: "a123456",
@@ -190,4 +190,4 @@ function insertSaller() {
       mongoose.disconnect();
     });
 }
-insertCommodity();
+insertBuyer();

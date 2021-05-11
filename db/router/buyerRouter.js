@@ -10,8 +10,86 @@ const AddressModel = require("@model/addressModel");
 const updateVerificationCode = require("@utils/updateVerificationCode");
 const loginCookie = require("@utils/loginCookie");
 const buyerUtils = require("./buyerUtils");
+const { response } = require("express");
 
 global.verificationCodeData = {};
+
+router.post("/search", (req, res) => {
+  const { keyword } = req.body;
+  if (!keyword) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  const reg = new RegExp(keyword);
+  const isNumber = !isNaN(Number(keyword));
+  const searchCondition = [
+    {
+      commodityNumber: {
+        $regex: reg,
+      },
+    },
+    {
+      commodityName: {
+        $regex: reg,
+      },
+    },
+    {
+      introduction: {
+        $regex: reg,
+      },
+    },
+    {
+      marketValue: {
+        $regex: reg,
+      },
+    },
+    {
+      memberValue: {
+        $regex: reg,
+      },
+    },
+    {
+      sallerId: {
+        $regex: reg,
+      },
+    },
+    {
+      sallerName: {
+        $regex: reg,
+      },
+    },
+    {
+      sallerPhone: {
+        $regex: reg,
+      },
+    },
+    {
+      classificationName: {
+        $regex: reg,
+      },
+    },
+  ];
+  if (isNumber) {
+    searchCondition.push({
+      classificationNumber: {
+        $regex: reg,
+      },
+    });
+  }
+  CommodityModel.find({ $or: searchCondition })
+    .then((response) => {
+      if (!response.length) {
+        res.send({ code: -2, msg: "查找失败" });
+        return;
+      }
+      const resData = buyerUtils.handleCommodity(response);
+      res.send({ code: 0, msg: "成功", content: resData });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.send({ code: -1, msg: "数据查询错误！" });
+    });
+});
 
 router.post("/login", (req, res) => {
   const { loginNumber, passWord } = req.body;
@@ -483,7 +561,7 @@ router.post("/setCourierNumber", (req, res) => {
   }
   OrderModel.findOneAndUpdate(
     { buyerId, orderNumber },
-    { $set: { backCourierNumber: courierNumber, orderStatus: 6 } }
+    { $set: { backCourierNumber: courierNumber, commodityStatus: 6 } }
   )
     .then((response) => {
       console.log(response);
@@ -520,7 +598,11 @@ router.post("/setOrder", async (req, res) => {
     const buyerInfo = await BuyerModel.findById(buyerId);
     const orderList = await OrderModel.find();
     const cartOrderList = await CartModel.find({ $or: searchCondition });
-    const insertCommodityList = cartOrderList.map((item) => {
+    // searchCondition.forEach(async (item) => {
+    //   await CartModel.deleteOne(item);
+    // });
+    console.log(buyerInfo);
+    const insertCommodityList = cartOrderList.map((item, index) => {
       return {
         commodityStatus: "0",
         commodityNumber: item.commodityNumber,
@@ -538,24 +620,6 @@ router.post("/setOrder", async (req, res) => {
         sallerPhone: item.sallerPhone,
         goCourierNumber: "",
         backCourierNumber: "",
-      };
-    });
-    const sallerClassifycaton = [];
-    insertCommodityList.forEach((item) => {
-      if (!sallerClassifycaton.includes(item.sallerId)) {
-        sallerClassifycaton.push(item.sallerId);
-      }
-    });
-    const insertOrderList = sallerClassifycaton.map((item, index) => {
-      const commodityList = insertCommodityList.filter(
-        (ele) => ele.sallerId === item
-      );
-      const totalValue = commodityList.reduce((sum, item, index) => {
-        return index === 1
-          ? sum.commodityTotalValue + item.commodityTotalValue
-          : sum + item.commodityTotalValue;
-      });
-      return {
         orderNumber: orderList.length + index,
         temporary: true,
         temporaryNumber: orderList.length,
@@ -563,16 +627,83 @@ router.post("/setOrder", async (req, res) => {
         buyerName: buyerInfo.buyerName,
         buyerPhone: buyerInfo.phoneNumber,
         receivingAddress,
-        totalValue,
-        commodityList,
         updateTime: Date.now(),
       };
     });
-    const insertOrderReps = await OrderModel.insertMany(insertOrderList);
-    console.log(insertOrderReps)
+
+    const insertOrderReps = await OrderModel.insertMany(insertCommodityList);
     res.send({ code: 0, msg: "成功", orderList: insertOrderReps });
+    // res.send({ code: 0, msg: "成功", orderList: insertOrderReps });
+    // const insertCommodityList = cartOrderList.map((item) => {
+    //   return {
+    //     commodityStatus: "0",
+    //     commodityNumber: item.commodityNumber,
+    //     commodityCount: item.commodityNumber,
+    //     commodityName: item.commodityName,
+    //     commodityImgUrl: item.commodityImgUrl,
+    //     commodityTotalValue: item.commodityTotalValue,
+    //     introduction: item.introduction,
+    //     marketValue: item.marketValue,
+    //     memberValue: item.memberValue,
+    //     classificationNumber: item.classificationNumber,
+    //     classificationName: item.classificationName,
+    //     sallerId: item.sallerId,
+    //     sallerName: item.sallerName,
+    //     sallerPhone: item.sallerPhone,
+    //     goCourierNumber: "",
+    //     backCourierNumber: "",
+    //   };
+    // });
+    // const sallerClassifycaton = [];
+    // insertCommodityList.forEach((item) => {
+    //   if (!sallerClassifycaton.includes(item.sallerId)) {
+    //     sallerClassifycaton.push(item.sallerId);
+    //   }
+    // });
+    // const insertOrderList = sallerClassifycaton.map((item, index) => {
+    //   const commodityList = insertCommodityList.filter(
+    //     (ele) => ele.sallerId === item
+    //   );
+    //   const totalValue = commodityList.reduce((sum, item, index) => {
+    //     return index === 1
+    //       ? sum.commodityTotalValue + item.commodityTotalValue
+    //       : sum + item.commodityTotalValue;
+    //   });
+    //   return {
+    //     orderNumber: orderList.length + index,
+    //     temporary: true,
+    //     temporaryNumber: orderList.length,
+    //     buyerId,
+    //     buyerName: buyerInfo.buyerName,
+    //     buyerPhone: buyerInfo.phoneNumber,
+    //     receivingAddress,
+    //     totalValue,
+    //     commodityList,
+    //     updateTime: Date.now(),
+    //   };
+    // });
   } catch (err) {
     console.log(err);
+  }
+});
+
+router.post("/checkOrderPay", async (req, res) => {
+  const { orderNumberList } = req.body;
+  if (!orderNumberList || !orderNumberList.length) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  try {
+    orderNumberList.forEach(async (item) => {
+      await OrderModel.findOneAndUpdate(
+        { orderNumber: item, temporary: true },
+        { $set: { temporary: false } }
+      );
+    });
+    res.send({ code: 0, msg: "成功" });
+  } catch (err) {
+    console.log(err);
+    res.send({ code: -1, msg: "查询失败" });
   }
 });
 
