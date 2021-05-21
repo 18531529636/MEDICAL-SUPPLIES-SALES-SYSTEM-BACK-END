@@ -1,5 +1,6 @@
 const commodityClassification = require("@data/commodityClassification");
 const CartModel = require("@model/cartModel");
+const CommodityModel = require("@model/commodityModel");
 
 module.exports = {
   handleCommodity(dataArray) {
@@ -60,7 +61,30 @@ module.exports = {
         backCourierNumber: "",
       };
     });
-    
-    return insertCommodityList
-  }
+
+    return insertCommodityList;
+  },
+  checkCommodityCount(commodityNumber, reduce, count = 1) {
+    return new Promise(async (resolve, reject) => {
+      const commodityList = await CommodityModel.find({ commodityNumber });
+      const commodity = commodityList[0];
+      console.log("check");
+      console.log(commodity.commodityCurrentCount);
+      console.log(count);
+      if (commodity.commodityCurrentCount >= count) {
+        if (reduce) {
+          await CommodityModel.findOneAndUpdate(
+            { commodityNumber },
+            {
+              $set: {
+                commodityCurrentCount: commodity.commodityCurrentCount - count,
+              },
+            }
+          );
+        }
+        resolve(false);
+      }
+      resolve(true);
+    });
+  },
 };

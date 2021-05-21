@@ -151,7 +151,7 @@ router.post("/logout", (req, res) => {
         res.send({ code: -2, msg: "退出失败" });
         return;
       }
-      res.clearCookie("token", { path: "/" });
+      res.clearCookie("buyerToken", { path: "/" });
       res.send({ code: 0, msg: "退出成功" });
     })
     .catch((err) => {
@@ -185,7 +185,7 @@ router.post("/register", async (req, res) => {
     buyerName,
     passWord,
     mailBox,
-    address,
+    phoneNumber,
   } = req.body;
   if (
     !loginNumber ||
@@ -193,7 +193,7 @@ router.post("/register", async (req, res) => {
     !buyerName ||
     !mailBox ||
     !verificationCode ||
-    !address
+    !phoneNumber
   ) {
     res.send({ code: -1, msg: "参数为空" });
     return;
@@ -226,7 +226,13 @@ router.post("/register", async (req, res) => {
       } else if (Date.now() - time >= 300000) {
         res.send({ code: -2, msg: "邮箱验证码失效" });
       } else {
-        BuyerModel.insertMany({ loginNumber, passWord, buyerName, mailBox })
+        BuyerModel.insertMany({
+          loginNumber,
+          passWord,
+          buyerName,
+          mailBox,
+          phoneNumber,
+        })
           .then(async () => {
             const loginToken = await loginCookie.getLoginCookie(loginNumber, 1);
             res.cookie("buyerToken", loginToken, { path: "/" });
@@ -408,6 +414,17 @@ router.post("/addCart", async (req, res) => {
     return;
   }
   try {
+    // const isEmpty = await buyerUtils.checkCommodityCount(
+    //   commodityNumber,
+    //   false
+    // );
+    // if (isEmpty) {
+    //   res.send({
+    //     code: -1,
+    //     msg: "库存不足，无法加入购物车，请联系卖家添加库存",
+    //   });
+    //   return;
+    // }
     const cartfindResp = await CartModel.find({ commodityNumber });
     if (!!cartfindResp.length) {
       const updateResp = await CartModel.findByIdAndUpdate(
@@ -466,6 +483,73 @@ router.post("/addCart", async (req, res) => {
   } catch (err) {
     console.log(err);
     res.send({ code: -1, msg: "添加失败" });
+  }
+});
+
+router.post("/setCartCommodityCount", async (req, res) => {
+  const { cartNumber, commodityCount } = req.body;
+  if (!cartNumber || !commodityCount) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  try {
+    const cartfindResp = await CartModel.find({ cartNumber });
+    const updateResp = await CartModel.findOneAndUpdate(
+      { cartNumber },
+      {
+        $set: {
+          updateTime: Date.now(),
+          commodityCount: commodityCount,
+          commodityTotalValue: commodityCount * cartfindResp[0].memberValue,
+        },
+      }
+    );
+    res.send({ code: 0, msg: "成功", content: updateResp });
+  } catch (err) {
+    console.log(err);
+    res.send({ code: -1, msg: "添加失败" });
+  }
+});
+
+router.post("/checkCommodityCount", async (req, res) => {
+  const { cartList } = req.body;
+  if (!cartList) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  try {
+    const notEnoughtList = [];
+    cartList.filter(async (item) => {
+      const isEmpty = await buyerUtils.checkCommodityCount(
+        item.commodityNumber,
+        false,
+        item.commodityCount
+      );
+      if (isEmpty) {
+        notEnoughtList.push(item);
+      }
+    });
+    console.log("notEnoughtList");
+    console.log(notEnoughtList);
+    setTimeout(() => {
+      console.log("notEnoughtList");
+      console.log(notEnoughtList);
+    }, 1000);
+    // const cartfindResp = await CartModel.find({ cartNumber });
+    // const updateResp = await CartModel.findOneAndUpdate(
+    //   { commodityNumber },
+    //   {
+    //     $set: {
+    //       updateTime: Date.now(),
+    //       commodityCount: commodityCount,
+    //       commodityTotalValue: commodityCount * cartfindResp[0].memberValue,
+    //     },
+    //   }
+    // );
+    // res.send({ code: 0, msg: "成功", content: updateResp });
+  } catch (err) {
+    console.log(err);
+    res.send({ code: -1, msg: "查询失败" });
   }
 });
 
@@ -603,6 +687,13 @@ router.post("/setOrder", async (req, res) => {
     // });
     console.log(buyerInfo);
     const insertCommodityList = cartOrderList.map((item, index) => {
+      // const isEmpty = await buyerUtils.checkCommodityCount(
+      //   item,
+      //   true
+      // );
+      // if (isEmpty) {
+
+      // }
       return {
         commodityStatus: "0",
         commodityNumber: item.commodityNumber,
@@ -633,55 +724,6 @@ router.post("/setOrder", async (req, res) => {
 
     const insertOrderReps = await OrderModel.insertMany(insertCommodityList);
     res.send({ code: 0, msg: "成功", orderList: insertOrderReps });
-    // res.send({ code: 0, msg: "成功", orderList: insertOrderReps });
-    // const insertCommodityList = cartOrderList.map((item) => {
-    //   return {
-    //     commodityStatus: "0",
-    //     commodityNumber: item.commodityNumber,
-    //     commodityCount: item.commodityNumber,
-    //     commodityName: item.commodityName,
-    //     commodityImgUrl: item.commodityImgUrl,
-    //     commodityTotalValue: item.commodityTotalValue,
-    //     introduction: item.introduction,
-    //     marketValue: item.marketValue,
-    //     memberValue: item.memberValue,
-    //     classificationNumber: item.classificationNumber,
-    //     classificationName: item.classificationName,
-    //     sallerId: item.sallerId,
-    //     sallerName: item.sallerName,
-    //     sallerPhone: item.sallerPhone,
-    //     goCourierNumber: "",
-    //     backCourierNumber: "",
-    //   };
-    // });
-    // const sallerClassifycaton = [];
-    // insertCommodityList.forEach((item) => {
-    //   if (!sallerClassifycaton.includes(item.sallerId)) {
-    //     sallerClassifycaton.push(item.sallerId);
-    //   }
-    // });
-    // const insertOrderList = sallerClassifycaton.map((item, index) => {
-    //   const commodityList = insertCommodityList.filter(
-    //     (ele) => ele.sallerId === item
-    //   );
-    //   const totalValue = commodityList.reduce((sum, item, index) => {
-    //     return index === 1
-    //       ? sum.commodityTotalValue + item.commodityTotalValue
-    //       : sum + item.commodityTotalValue;
-    //   });
-    //   return {
-    //     orderNumber: orderList.length + index,
-    //     temporary: true,
-    //     temporaryNumber: orderList.length,
-    //     buyerId,
-    //     buyerName: buyerInfo.buyerName,
-    //     buyerPhone: buyerInfo.phoneNumber,
-    //     receivingAddress,
-    //     totalValue,
-    //     commodityList,
-    //     updateTime: Date.now(),
-    //   };
-    // });
   } catch (err) {
     console.log(err);
   }
@@ -728,6 +770,25 @@ router.post("/getOrder", async (req, res) => {
   }
 });
 
+router.post("/confirmReceive", async (req, res) => {
+  const { orderNumber } = req.body;
+  if (!orderNumber) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  try {
+    OrderModel.findOneAndUpdate(
+      { orderNumber },
+      { $set: { commodityStatus: 2 } }
+    ).then((response) => {
+      res.send({ code: 0, msg: "成功", content: response });
+    });
+  } catch (err) {
+    console.log(err);
+    res.send({ code: -1, msg: "失败" });
+  }
+});
+
 router.post("/getTemporaryOrder", async (req, res) => {
   const { buyerId } = req.body;
   if (!buyerId) {
@@ -746,6 +807,49 @@ router.post("/getTemporaryOrder", async (req, res) => {
   } catch (err) {
     console.log(err);
     res.send({ code: -1, msg: "查询失败" });
+  }
+});
+
+router.post("/setBackCourierNumber", (req, res) => {
+  const { buyerId, orderNumber, courierNumber } = req.body;
+  if (!buyerId || !orderNumber || !courierNumber) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  OrderModel.findOneAndUpdate(
+    { buyerId, orderNumber },
+    { $set: { backCourierNumber: courierNumber, commodityStatus: 6 } }
+  )
+    .then((response) => {
+      console.log(response);
+      if (!response) {
+        res.send({ code: -2, msg: "失败" });
+        return;
+      }
+      res.send({ code: 0, msg: "订单快递单号更新成功" });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.send({ code: -1, msg: "失败" });
+    });
+});
+
+router.post("/requestReturn", async (req, res) => {
+  const { orderNumber } = req.body;
+  if (!orderNumber) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  try {
+    OrderModel.findOneAndUpdate(
+      { orderNumber },
+      { $set: { commodityStatus: 3 } }
+    ).then((response) => {
+      res.send({ code: 0, msg: "成功", content: response });
+    });
+  } catch (err) {
+    console.log(err);
+    res.send({ code: -1, msg: "失败" });
   }
 });
 

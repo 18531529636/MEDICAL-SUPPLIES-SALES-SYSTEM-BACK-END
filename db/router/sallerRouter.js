@@ -46,6 +46,7 @@ router.post("/login", (req, res) => {
 
 router.post("/logout", (req, res) => {
   const { loginNumber } = req.body;
+  console.log(loginNumber);
   if (!loginNumber) {
     res.send({ code: -1, msg: "参数为空" });
     return;
@@ -61,14 +62,12 @@ router.post("/logout", (req, res) => {
     ],
   })
     .then(async (response) => {
-      console.log("退出");
-      console.log("response");
       console.log(response);
       if (!response.length) {
         res.send({ code: -2, msg: "退出失败" });
         return;
       }
-      res.clearCookie("token", { path: "/" });
+      res.clearCookie("sallerToken", { path: "/" });
       res.send({ code: 0, msg: "退出成功" });
     })
     .catch((err) => {
@@ -84,13 +83,15 @@ router.post("/register", async (req, res) => {
     sallerName,
     passWord,
     mailBox,
+    phoneNumber,
   } = req.body;
   if (
     !loginNumber ||
     !passWord ||
     !sallerName ||
     !mailBox ||
-    !verificationCode
+    !verificationCode ||
+    !phoneNumber
   ) {
     res.send({ code: -1, msg: "参数为空" });
     return;
@@ -123,7 +124,13 @@ router.post("/register", async (req, res) => {
       } else if (Date.now() - time >= 86400000) {
         res.send({ code: -2, msg: "邀请码失效" });
       } else {
-        Saller.insertMany({ loginNumber, passWord, sallerName, mailBox })
+        Saller.insertMany({
+          loginNumber,
+          passWord,
+          sallerName,
+          mailBox,
+          phoneNumber,
+        })
           .then(async () => {
             const loginToken = await loginCookie.getLoginCookie(loginNumber, 0);
             res.cookie("sallerToken", loginToken, { path: "/" });
@@ -168,11 +175,11 @@ router.post("/createMyCommodity", async (req, res) => {
     const sallerInfo = Saller.findById(userId);
     const commodityList = await CommodityModel.find();
     const insertData = {
-      commodityNumber: commodityList.length,
+      commodityNumber: commodityList.length + Math.floor(Math.random() * 10),
       commodityName: createInfo.commodityName,
       commodityCurrentCount: createInfo.commodityCurrentCount,
       commodityImgUrl: "test",
-      introduction: createInfo.commodityCurrentCount,
+      introduction: createInfo.introduction,
       marketValue: createInfo.marketValue,
       memberValue: createInfo.memberValue,
       sallerId: userId,
@@ -191,6 +198,25 @@ router.post("/createMyCommodity", async (req, res) => {
     res.send({ code: -1, msg: "出错" });
   }
 });
+
+router.post("/confirmReceive", async (req, res) => {
+  const { orderNumber } = req.body;
+  if (!orderNumber) {
+    res.send({ code: -1, msg: "参数为空" });
+    return;
+  }
+  try {
+    orderModel
+      .findOneAndUpdate({ orderNumber }, { $set: { commodityStatus: 7 } })
+      .then((response) => {
+        res.send({ code: 0, msg: "成功", content: response });
+      });
+  } catch (err) {
+    console.log(err);
+    res.send({ code: -1, msg: "失败" });
+  }
+});
+
 router.post("/getMyCommodity", async (req, res) => {
   const { userId } = req.body;
   if (!userId) {
@@ -209,6 +235,7 @@ router.post("/getMyCommodity", async (req, res) => {
 
 router.post("/updateCommodity", async (req, res) => {
   const { updateCommodity } = req.body;
+  console.log(updateCommodity);
   if (!updateCommodity) {
     res.send({ code: -1, msg: "参数为空" });
     return;
@@ -222,6 +249,7 @@ router.post("/updateCommodity", async (req, res) => {
           marketValue: updateCommodity.marketValue,
           memberValue: updateCommodity.memberValue,
           commodityCurrentCount: updateCommodity.commodityCurrentCount,
+          introduction: updateCommodity.introduction,
           updateTime: Date.now(),
         },
       }
@@ -248,7 +276,7 @@ router.post("/deleteCommodity", async (req, res) => {
   }
 });
 
-router.post("/setCourierNumber", (req, res) => {
+router.post("/setGoCourierNumber", (req, res) => {
   const { sallerId, orderNumber, courierNumber } = req.body;
   if (!sallerId || !orderNumber || !courierNumber) {
     res.send({ code: -1, msg: "参数为空" });
@@ -257,7 +285,7 @@ router.post("/setCourierNumber", (req, res) => {
   orderModel
     .findOneAndUpdate(
       { sallerId, orderNumber },
-      { $set: { goCourierNumber: courierNumber, orderStatus: 1 } }
+      { $set: { goCourierNumber: courierNumber, commodityStatus: 1 } }
     )
     .then((response) => {
       console.log(response);
@@ -283,7 +311,7 @@ router.post("/handleReturnApply", (req, res) => {
   orderModel
     .findOneAndUpdate(
       { sallerId, orderNumber },
-      { $set: { orderStatus: isAgree ? 5 : 4 } }
+      { $set: { commodityStatus: isAgree ? 5 : 4 } }
     )
     .then((response) => {
       console.log(response);

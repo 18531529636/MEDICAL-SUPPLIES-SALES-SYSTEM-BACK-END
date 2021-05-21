@@ -17,7 +17,7 @@ module.exports = {
             reject("a");
             return;
           }
-          const { loginNumber, mailBox, _id } = response[0];
+          const { loginNumber, mailBox, _id, phoneNumber } = response[0];
           const userName = response[0][`${userType}Name`];
           const loginCookie = getCrypto.encrypte({
             loginNumber,
@@ -25,6 +25,7 @@ module.exports = {
             userName,
             userId: _id,
             userType,
+            phoneNumber,
           });
           resolve(loginCookie);
         })
